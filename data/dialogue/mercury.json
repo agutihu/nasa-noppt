@@ -1,0 +1,12 @@
+{
+  "speaker": "Laila",
+  "lines": [
+    { "trigger": "start", "text": "Mercury. Dayside hits about 430 degrees Celsius; nightside falls to minus 180. Almost no atmosphere to hold the heat." },
+    { "trigger": "start", "text": "The terminator is sweeping across the surface. Stay in the crater shadows, and keep ahead of the sunlight." },
+    { "trigger": "heat", "text": "Your heat meter is climbing. Get into a shadow crater before you cook." },
+    { "trigger": "win", "text": "Solar Panel Array recovered. Two down, one to go." },
+    { "trigger": "hint", "text": "The shadows are your only safe places. The sun waits for no one." },
+    { "trigger": "hint", "text": "Move steadily - panic burns fuel and time." },
+    { "trigger": "idle", "text": "That glowing rectangle ahead is the outpost. The panel is inside." }
+  ]
+}

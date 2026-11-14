@@ -1,0 +1,23 @@
+{
+  "id": "mercury",
+  "name": "Mercury",
+  "style": "top_down",
+  "part": { "name": "Solar Panel Array", "color": "#e7d192" },
+  "objective": "Cross to the outpost and take the Solar Panel Array.",
+  "params": {
+    "player_start": [120, 360],
+    "move_speed": 250,
+    "accel": 1150,
+    "friction": 620,
+    "sun_speed": 56,
+    "heat_rise_rate": 14,
+    "heat_fall_rate": 9,
+    "meter_max": 100,
+    "part_pos": [1560, 360],
+    "shadows": [[300, 220, 220, 260], [700, 40, 180, 260], [1050, 300, 200, 260], [1300, 150, 240, 240]]
+  },
+  "hint_rules": { "idle_seconds": 45, "deaths": 3 },
+  "dialogue": "dialogue/mercury.json",
+  "facts": ["mercury_temps", "mercury_atmosphere"],
+  "unlock": ["tutorial_done"]
+}

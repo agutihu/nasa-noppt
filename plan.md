@@ -4,7 +4,7 @@
 Working title: **HOMEBOUND** — *a solar system repair mission*
 Guide character: **Laila**
 
-A stranded pilot must cross the solar system, recover five ship parts, and fly home.
+A stranded pilot must cross the solar system, recover three critical ship parts, and fly home.
 Every level is built on one real planetary fact, and that fact is the mechanic.
 
 ---
@@ -40,7 +40,7 @@ Every level is built on one real planetary fact, and that fact is the mechanic.
 | 1 | Mars | Platformer | 3.71 m/s² gravity (~38% Earth) → floaty long jumps; dust storm cuts visibility | Navigation Module | 4 |
 | 2 | Mercury | Top-down stealth | 430 °C day / −180 °C night → sun line sweeps, heat meter, hide in crater shadow | Solar Panel Array | 4 |
 | 3 | Venus | Timed survival | 465 °C, 92 bar pressure → pressure meter only slows with cooling canisters | Hull Plating | 3 |
-| 6 | Earth | Assembly + stats | Drag 5 parts onto the ship; recap facts; stats screen | — (ending) | 2 |
+| 6 | Earth | Assembly + stats | Drag 3 parts onto the ship; recap facts; stats screen | — (ending) | 2 |
 
 **Total play time ≈ 14 minutes.** A judge can see everything in one sitting.
 
@@ -64,7 +64,7 @@ boot (APOD splash, cached) → menu (Play / Continue / Settings / Quit)
    → solar map (hub; shows parts collected, unlocks)
        → Tutorial (auto on first run)
        → Mars | Mercury | Venus (any order, unlocked after tutorial)
-       → Earth finale (unlocked when all 5 parts collected)
+       → Earth finale (unlocked when all 3 parts collected)
    → stats screen → menu (or New Game)
 ```
 
@@ -300,7 +300,7 @@ hearts 5/3/2, hint idle 20/45/∞ seconds.
 - **Part A (required):** drag each collected part onto the ship; each snaps with its planet fact.
 - **Part B (optional, cut first):** gentle 15 s re-entry dodge reusing simple controls.
 - **Win:** land → stats screen: time, deaths, parts, facts learned.
-- **Done when:** only reachable with 5 parts; stats survive a restart.
+- **Done when:** only reachable with all 3 parts; stats survive a restart.
 - **Effort:** S.
 
 ---
@@ -318,7 +318,7 @@ is cut, not carried.
 | **P3 Mars** | H7–H11 | Sanghaar: platformer, storm, chaser, turret. Sulaiman: hearts, Meter base, pause overlay | Mars winnable **and** losable, restart is fair | **G3 merge** |
 | **P4 Mercury** | H11–H15 | Sanghaar: sun sweep, heat meter wiring, patrols. Sulaiman: map screen with unlocks + part icons | Mercury winnable from the map after tutorial | **G4 merge** |
 | **P5 Venus** | H15–H17.5 | Sanghaar: timer, pressure, canisters, fragments. Sulaiman: difficulty multipliers applied in GameState | Venus winnable in 90 s | **G5 merge** |
-| **P6 Close the loop** | H17.5–H20 | Sulaiman: ending assembly, stats, save/load, APOD boot screen. Sanghaar: ending dialogue, balance pass | New game → 5 parts → Earth → stats → relaunch continues | **G6 merge** |
+| **P6 Close the loop** | H17.5–H20 | Sulaiman: ending assembly, stats, save/load, APOD boot screen. Sanghaar: ending dialogue, balance pass | New game → 3 parts → Earth → stats → relaunch continues | **G6 merge** |
 | **P7 Polish** | H20–H22 | both | SFX, screen shake, particles, archive cards, fact verification, FPS check | stable 60 FPS, all facts verified | **G7 merge** |
 | **P8 Freeze & demo** | H22–H23.5 | both | README, screenshots, `v1.0` tag, 3-min demo recorded, submission text | code frozen | **freeze** |
 | **P9 Buffer** | H23.5–H24 | both | submission fields, zip/links, optional pygbag attempt | submitted |
@@ -436,7 +436,7 @@ Do **not** cut: tutorial, dialogue/hints, part loop, fact display, win/lose, pau
 ## 11. Three-minute demo script (for judges)
 
 1. **0:00** — Boot screen: APOD image with title and "data: NASA APOD".
-2. **0:15** — Menu → map. Say: "Five parts, seven planets, one ride home."
+2. **0:15** — Menu → map. Say: "Three parts, seven planets, one ride home."
 3. **0:30** — Tutorial: Laila introduces the mission and the parts; collect the first marker.
 4. **1:00** — Mars: jump in 38% gravity, a dust storm hits, recover the Navigation Module.
 5. **1:40** — Mercury: outrun the sun line, hide in a crater, heat meter saved you.
@@ -472,3 +472,25 @@ Do **not** cut: tutorial, dialogue/hints, part loop, fact display, win/lose, pau
 4. **Desktop demo** for judging; a web link is a bonus only.
 5. **Facts:** who signs off the NASA numbers (Leslie?) — we need the check at H20.
 6. Does the team want the "Data Archive" cards for Jupiter and Saturn? (30 min, adds coverage.)
+
+---
+
+## 14. Judging alignment (Space Apps 1–5 rubric)
+
+Every feature below exists to defend a specific criterion. Point judges at them by name.
+
+| Criterion | What the game does | Where judges see it |
+|---|---|---|
+| **Impact** | Teaches real planetary science through mechanics rather than text; difficulty settings and accessibility make it playable by anyone; fact logging rewards curiosity | Fact cards on the map, stats screen, Easy/Normal/Hard + Large text options in Settings |
+| **Creativity** | One idea carries the whole design: *the fact is the mechanic*. Laila (a holographic navigator) delivers every fact diegetically, never as a pop-up | Laila's dialogue, hologram art, fact-driven meters |
+| **Validity** | Numbers are real and sourced: Mars 3.71 m/s², Mercury −180/430 °C, Venus 92 bar/465 °C. Runs offline, 60 FPS, tested by automated smoke + playtest suites | In-game meters show real units (°C, bar); `tools/smoke_test.py` and `tools/playtest.py` in the repo |
+| **Relevance** | NASA data is the core loop, not decoration: planetary fact sheets drive every rule, cached APOD opens the game, sources are cited on every fact card | Boot screen (APOD credit), map fact cards ("NASA Planetary Fact Sheet"), ending stats footer |
+| **Presentation** | 3-minute demo script (§11) with a fixed story beat per minute | Demo video + README |
+
+### Hard rules for the remaining hours
+
+1. No fact appears on screen without a NASA source behind it. If Leslie cannot source a number, the line gets cut.
+2. Every meter carries real units (°C, bar, m/s²) so a judge can verify values at a glance.
+3. The game must run from a fresh clone with no internet — cached APOD, no live calls.
+4. Accessibility ship-list: difficulty settings, text size, mute, pause, colour+shape hazard coding (storm = dark vignette, sun = orange line, acid = jagged green pools). Never colour alone.
+5. The presenter's story: *"We turned planetary data into game rules. You don't read that Mars has 38% gravity — you feel it in the jump."*

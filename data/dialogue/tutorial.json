@@ -1,0 +1,57 @@
+{
+  "speaker": "Laila",
+  "lines": [
+    {
+      "trigger": "start",
+      "text": "Wake up, pilot. That bump you heard was a micrometeorite taking a bite out of the ship."
+    },
+    {
+      "trigger": "start",
+      "text": "I am Laila. I run the navigation core, and right now I am the only thing out here keeping you pointed home."
+    },
+    {
+      "trigger": "start",
+      "text": "Three critical parts are scattered across the solar system. Bring them back and I can put this ship together again."
+    },
+    {
+      "trigger": "start",
+      "text": "First, learn the suit. Use W A S D or the arrow keys. Your jetpack has drift, so brake early."
+    },
+    {
+      "trigger": "marker",
+      "text": "Good. The beacon is still alive, which means the solar map is too. One more thing before we leave orbit."
+    },
+    {
+      "trigger": "crate",
+      "text": "That crate holds the navigation module's mounting bracket. Grab it, then we can launch."
+    },
+    {
+      "trigger": "hint_prompt",
+      "text": "If you ever feel lost out there, press H. I will always answer."
+    },
+    {
+      "trigger": "win",
+      "text": "Map is online. Mars, Mercury and Venus are marked - every one of them is holding a piece of this ship."
+    },
+    {
+      "trigger": "win",
+      "text": "Choose any of the three. I will be in your ear the whole way."
+    },
+    {
+      "trigger": "hint",
+      "text": "The beacon is up and to the right. Hold the direction, then ease off to stop."
+    },
+    {
+      "trigger": "hint",
+      "text": "The crate is below and left of the ship. Press E when you are touching it."
+    },
+    {
+      "trigger": "hint",
+      "text": "No rush, pilot. The solar system is not going anywhere. Unfortunately."
+    },
+    {
+      "trigger": "idle",
+      "text": "Try the arrow keys if WASD feels awkward. Both work."
+    }
+  ]
+}

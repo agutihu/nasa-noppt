@@ -1,0 +1,27 @@
+{
+  "id": "mars",
+  "name": "Mars",
+  "style": "platformer",
+  "part": { "name": "Navigation Module", "color": "#8fd3ff" },
+  "objective": "Reach the lander wreck and take the Navigation Module.",
+  "params": {
+    "gravity_px": 760,
+    "jump_speed": 540,
+    "hold_boost": 0.5,
+    "move_speed": 250,
+    "accel": 1800,
+    "friction": 2200,
+    "chaser_speed": 48,
+    "patrol_speed": 55,
+    "storm_interval": 25,
+    "storm_duration": 8,
+    "visibility_radius": 120,
+    "part_pos": [4080, 240],
+    "player_start": [120, 430],
+    "checkpoints": [60, 1800, 3200]
+  },
+  "hint_rules": { "idle_seconds": 45, "deaths": 3 },
+  "dialogue": "dialogue/mars.json",
+  "facts": ["mars_gravity", "mars_dust_storms"],
+  "unlock": ["tutorial_done"]
+}

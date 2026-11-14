@@ -169,7 +169,7 @@ All drawing of missing assets falls back to primitives. The game must run with a
 | S8 | `Meter`, `Button`, pause overlay (Resume/Restart/Mute/Map) | `ui/meter.py`, `ui/button.py`, `ui/pause.py` | 1 h | reuse in Mars/ Mercury / Venus unchanged |
 | S9 | Solar map: orbits, planet dots from `planets.json`, locks, part ticks, archive cards | `scenes/map.py` | 1.5 h | Tutorial done → Mars/Mercury/Venus unlocked |
 | S10 | Boot screen with cached APOD + `tools/fetch_apod.py` | `scenes/boot.py`, `tools/fetch_apod.py` | 0.5 h | works offline with committed JSON |
-| S11 | Ending: drag parts onto ship, snap + fact, stats screen | `scenes/ending.py`, `ui/stats.py` | 1.5 h | 5 parts required, stats correct |
+| S11 | Ending: drag parts onto ship, snap + fact, stats screen | `scenes/ending.py`, `ui/stats.py` | 1.5 h | 3 parts required, stats correct |
 | S12 | Settings: difficulty + volume, persisted | `scenes/menu.py` (settings tab) | 0.5 h | changes apply to next level load |
 
 Total ≈ 13 h. Order is S1→S2→S3→S5→S4→S6→S7→S8→S9→S10→S11→S12, with S10 done early
@@ -252,7 +252,7 @@ storm and drops the turret; at H15, Mercury drops cold zones.
 | HUD | level constructs `HUD(state, cfg)` and calls `set_*` | level never draws hearts itself |
 | Dialogue | level calls `dialogue.queue([...])` from `data/dialogue/*.json` | level never draws text boxes |
 | Meters | level owns the value, `Meter` only renders | `meter.set(value)` each frame |
-| Ending | `ending` reads `state.parts` | requires all 5, else bounces to map |
+| Ending | `ending` reads `state.parts` | requires all 3 required parts, else bounces to map |
 | Save | `state.save()` on pickup + scene change | levels do not serialize anything themselves |
 
 ---
@@ -266,7 +266,7 @@ cut from `plan.md` §10 to pay for it.
 2. **SceneManager + GameState** (~2.5 h; simple dict-based scenes are acceptable).
 3. **Map screen** (~1.5 h; a list of three buttons is an acceptable map).
 4. **Menu + boot + pause** (~1 h combined).
-5. **Ending assembly** (~1 h; a single "Assemble" button that shows the five facts is acceptable).
+5. **Ending assembly** (~1 h; a single "Assemble" button that shows the three facts is acceptable).
 6. **Save/load** (drop entirely before spending an hour on it).
 7. **APOD** (drop; keep the static title card).
 
@@ -340,3 +340,21 @@ downgrade to plain `pygame`.
 
 **Never cut:** tutorial, Laila's dialogue and hints, the part-collection loop, the fact display,
 win/lose states, pause. Everything else is negotiable.
+
+---
+
+## 12. Judging alignment (who owns which criterion)
+
+The presenter carries Presentation, but the build has to make their job easy. Feature-to-criterion
+ownership:
+
+| Criterion | Owner | Standing deliverable |
+|---|---|---|
+| Impact | Sanghaar | Fact logging, stats screen, difficulty + text-size + mute settings, accessible hazards |
+| Creativity | Sanghaar | Laila's dialogue and hologram, fact-as-mechanic level rules |
+| Validity | Sulaiman | Tested game loop (`tools/smoke_test.py`, `tools/playtest.py`), offline APOD, 60 FPS |
+| Relevance | Sanghaar | Real units on meters, sourced fact cards, NASA data in JSON (checked by Sulaiman) |
+| Presentation | Sanghaar (docs) → presenter | Demo script in `plan.md` §11, README quickstart, screenshots |
+
+**Rule:** any new feature must name the criterion it defends before it is built. A feature that
+defends none of the five gets cut.

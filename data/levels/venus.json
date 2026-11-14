@@ -1,0 +1,26 @@
+{
+  "id": "venus",
+  "name": "Venus",
+  "style": "top_down",
+  "part": { "name": "Hull Plating", "color": "#f2b6a0" },
+  "objective": "Collect 3 hull plating fragments, then reach the escape point.",
+  "params": {
+    "player_start": [360, 300],
+    "move_speed": 200,
+    "accel": 820,
+    "friction": 700,
+    "time_limit": 90,
+    "pressure_rate": 1.15,
+    "canister_effect": 30,
+    "fragments_needed": 3,
+    "part_pos": [360, 90],
+    "exit_pos": [360, 300],
+    "fragments": [[80, 90], [640, 90], [640, 510]],
+    "canisters": [[140, 510], [360, 300], [580, 280], [220, 200]],
+    "acid_pools": [[440, 60, 140, 80], [80, 300, 120, 120], [500, 420, 160, 90]]
+  },
+  "hint_rules": { "idle_seconds": 45, "deaths": 3 },
+  "dialogue": "dialogue/venus.json",
+  "facts": ["venus_pressure", "venus_temp"],
+  "unlock": ["tutorial_done"]
+}

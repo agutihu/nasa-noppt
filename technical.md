@@ -6,14 +6,14 @@ This document describes the architecture and implementation of HOMEBOUND.
 
 - **Language:** Python 3.12
 - **Engine:** pygame-ce >= 2.5.7 (never plain `pygame`)
-- **Resolution:** 1280 x 720, 60 FPS, delta-time based
-- **Style:** Data-driven, one-direction data flow, no globals
+- **Resolution:** 1280 × 720, 60 FPS, delta-time based
+- **Style:** Data-driven, one-direction data flow, no module-level mutables
 
 ## Architecture
 
 ### Scene / SceneManager / Game
 
-Every screen is a `Scene` with three hooks:
+Every screen is a `Scene` with hooks:
 
 ```python
 class Scene:
@@ -24,30 +24,23 @@ class Scene:
     def on_exit(self): ...
 ```
 
-`SceneManager` owns the stack (list) and registry of named scenes:
+`SceneManager` owns a stack and a name registry:
 
 - `switch(name, **data)` — replace the current scene.
-- `push(name, **data)` — open an overlay (pause, dialogue focus) while the scene below keeps drawing.
+- `push(name, **data)` — open an overlay (pause) while the scene below keeps drawing.
 - `pop()` — close the top overlay.
-- `reload()` — switch to the current scene again (restart).
+- `reload()` — switch to the current scene (restart).
 - `update(dt)` — forward delta time to the top scene; overlays update too.
 - `draw()` — forward to every scene in the stack, top first.
 
 The `Game` container holds the virtual screen surface, the real window, the state, and the manager.
-Scenes never touch the window directly; they use the virtual surface and the manager handles scaling.
+Scenes use the virtual surface; the manager handles window scaling.
 
 ### GameState
 
-A single shared `GameState` object owns all mutable progress:
+A single shared `GameState` owns all mutable progress:
 
-- `parts` — list of recovered part names.
-- `facts` — list of fact keys learned/logged.
-- `deaths` — lifetime death count.
-- `difficulty` — `easy` / `normal` / `hard`.
-- `current_level` — active level id.
-- `elapsed` — total play seconds.
-- `tutorial_done` — tutorial completion flag.
-- `volume`, `muted` — audio state.
+- `parts`, `facts`, `deaths`, `difficulty`, `current_level`, `elapsed`, `tutorial_done`, `volume`, `muted`.
 
 Difficulty is applied through multipliers (speed, time, hearts, hint idle) so no level scene ever
 branches on difficulty itself.
@@ -73,16 +66,16 @@ One direction, no module-level mutables.
 | `core/game_state.py` | Single state object, multipliers, persistence hooks. |
 | `core/save.py` | Atomic JSON save/load, corrupt-file safe. |
 | `core/levels.py` | JSON loading, validation, planet helpers, playable-level queries. |
-| `core/assets.py` | Font/image loading with graceful fallbacks. |
+| `core/assets.py` | Font/image loading with graceful fallback. |
 | `core/audio.py` | Synthesized SFX, mute, mixer fallback. |
-| `core/text.py` | Cached wrapping and text drawing. |
-| `core/color.py` | Hex parsing and color math. |
-| `scenes/` | Boot, menu, map, pause, tutorial, mars, mercury, venus, ending. |
-| `entities/` | Player, pickups, hazards, enemies (as built). |
-| `ui/` | HUD, dialogue box, meter, button, pause overlay, stats. |
-| `art/` | Procedural sprites, planets, backgrounds. |
-| `data/` | Levels, planets, dialogue, APOC cache. |
-| `tools/` | `fetch_apod.py` — one-time NASA APOC cache. |
+| `core/text.py` | Cached text wrapping + drawing. |
+| `core/color.py` | Hex parsing + color math. |
+| `scenes/` | boot, menu, map, tutorial, mars, mercury, venus, ending. |
+| `entities/` | player, pickups, enemies. |
+| `ui/` | hud, dialogue_box, meter, button, pause. |
+| `art/` | sprites, planets, backgrounds. |
+| `data/` | planets, levels, dialogue, APOD cache. |
+| `tools/` | fetch_apod, playtest, smoke_test. |
 
 ## Engineering Rules
 
@@ -99,6 +92,13 @@ One direction, no module-level mutables.
 - File: `savegame.json` next to the game, atomically written via temp file + rename.
 - Wrapped in try/except; corrupt or missing saves never block startup.
 - Saved: parts, facts, deaths, difficulty, current level, elapsed, tutorial flag, volume, mute.
+
+## HUD and Dialogue Contracts
+
+- `HUD` owns hearts, parts inventory, timer, and objective text. Levels never draw hearts.
+- `DialogueBox` owns all Laila text: typewriter, queue, hint mode, advance keys (Space/Enter/
+  click). While active, gameplay updates are frozen except dialogue.
+- `Meter` owns value for heat / pressure / fuel; levels set values through `set`.
 
 ## Adding a New Level
 
@@ -120,3 +120,15 @@ python main.py
 ```
 
 Never install plain `pygame`; install `pygame-ce`.
+
+## Tools
+
+| Tool | Purpose |
+|---|---|
+| `tools/smoke_test.py` | Headless smoke test: registers every scene, runs frames, reports failures. |
+| `tools/playtest.py` | Scripted end-to-end playtest: tutorial → Mars storm/part → Mercury heat/part → Venus fragments/exit → map unlock → ending assemble/stats. |
+| `tools/fetch_apod.py` | One-time NASA APOD fetch + cache to `data/cache/apod.json` / `apod.jpg`. |
+
+Run with `SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy` (the scripts set these themselves).
+
+See [TOOLS.md](TOOLS.md) for usage details.

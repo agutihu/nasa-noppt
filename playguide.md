@@ -30,7 +30,7 @@ Never install plain `pygame`. Use `pygame-ce`.
 python main.py
 ```
 
-The game opens at 1280 x 720. Fully offline — no internet or asset files required.
+The game opens at 1280 × 720 and runs fully offline — no internet or asset files required.
 
 Optional boot-screen cache refresh:
 
@@ -44,9 +44,9 @@ python tools/fetch_apod.py
 |---|---|
 | Move | WASD / arrow keys |
 | Jump (Mars platformer) | Space (hold for higher) |
-| Interact / pick up | E |
+| Pick up / interact | Walk into the item (proximity) |
 | Laila hint | H |
-| Advance dialogue | Space / Enter / click |
+| Advance dialogue | Space / Enter / click / E |
 | Pause | Esc |
 | Menu navigation | Up/Down + Enter, or mouse |
 
@@ -65,10 +65,10 @@ when all required parts are collected.
 
 | # | Level | Objective |
 |---|---|---|
-| 0 | Earth orbit | Learn movement, interaction, and Laila's hint. Meet Laila. |
-| 1 | Mars | Reach the lander wreck and recover the Navigation Module. |
-| 2 | Mercury | Cross the sunlit surface to the outpost, recover the Solar Panel Array. |
-| 3 | Venus | Collect fragments and escape within the time limit. |
+| 0 | Earth orbit | Learn movement, interaction, and Laila's hint. Meet Laila. Tasks: fly to beacon → collect bracket crate → press H. |
+| 1 | Mars | Reach the lander wreck and recover the Navigation Module. Low gravity + dust storm. |
+| 2 | Mercury | Cross to the outpost and take the Solar Panel Array. Outrun the sun line, hide in shadows, manage heat. |
+| 3 | Venus | Collect fragments and escape within the time limit. Manage pressure, use canisters, avoid acid. |
 | 6 | Earth | Assemble the ship with recovered parts; land; view stats. |
 
 Jupiter, Saturn, Uranus, and Neptune appear as read-only fact cards.
@@ -79,7 +79,7 @@ Jupiter, Saturn, Uranus, and Neptune appear as read-only fact cards.
 - Laila types out lines at a steady pace.
 - Press `H` at any time for a hint from Laila.
 - Idle hints trigger after a delay; death-based hints trigger after repeated failures.
-- Hints are readable at 1280 x 720.
+- Hints are readable at 1280 × 720.
 
 ## Difficulty
 

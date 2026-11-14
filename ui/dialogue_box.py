@@ -1,4 +1,4 @@
-"""Laila's dialogue box: typewriter text, queued lines, hint mode."""
+"""Laika's dialogue box: typewriter text, queued lines, hint mode."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ class DialogueBox:
         self.rect = pygame.Rect(rect or (104, settings.HEIGHT - 198, settings.WIDTH - 208, 170))
         self.lines: list[str] = []
         self.index = 0
-        self.speaker = "Laila"
+        self.speaker = "Laika"
         self.revealed = 0.0
         self.chars_per_second = 62.0
         self.active = False
@@ -45,7 +45,7 @@ class DialogueBox:
         self.revealed = 0.0
         self.active = True
         self.is_hint = hint
-        self.speaker = speaker or "Laila"
+        self.speaker = speaker or "Laika"
         self.on_done = on_done
         self.accent = accent or (settings.GOLD if hint else settings.ACCENT)
 
@@ -137,7 +137,7 @@ class DialogueBox:
         portrait_center = (rect.x + 62, rect.y + 58)
         pygame.draw.circle(surface, (8, 18, 30), portrait_center, 40)
         pygame.draw.circle(surface, self.accent, portrait_center, 40, 1)
-        sprites.draw_laila(
+        sprites.draw_laika(
             surface,
             portrait_center,
             self.t,

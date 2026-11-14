@@ -2,7 +2,7 @@
 
 **NASA Space Apps Hackathon 2026**
 Working title: **HOMEBOUND** — *a solar system repair mission*
-Guide character: **Laila**
+Guide character: **Laika**
 
 A stranded pilot must cross the solar system, recover three critical ship parts, and fly home.
 Every level is built on one real planetary fact, and that fact is the mechanic.
@@ -13,7 +13,7 @@ Every level is built on one real planetary fact, and that fact is the mechanic.
 
 | Item | Decision | Why |
 |---|---|---|
-| Guide name | **Laila** (not Laika) | Matches Victoria's brief; the PDFs say it is a find/replace |
+| Guide name | **Laika** | Final team decision (rename from early-draft "Laila"); applied project-wide |
 | Shipped levels | **0 Tutorial, 1 Mars, 2 Mercury, 3 Venus, 6 Earth finale** | 5 levels is a complete, demoable arc in 24h |
 | Cut levels | Jupiter (4) and Saturn (5) | Highest effort / lowest time-to-playable |
 | Python | 3.12 pinned (3.11 also fine) | Matches `pygame-ce` wheels; 3.14 may not have wheels yet |
@@ -36,7 +36,7 @@ Every level is built on one real planetary fact, and that fact is the mechanic.
 
 | # | Level | Style | Mechanic from real data | Part recovered | Minutes |
 |---|---|---|---|---|---|
-| 0 | Earth orbit | Top-down tutorial | Movement, interact, hint button | — (meet Laila) | 1 |
+| 0 | Earth orbit | Top-down tutorial | Movement, interact, hint button | — (meet Laika) | 1 |
 | 1 | Mars | Platformer | 3.71 m/s² gravity (~38% Earth) → floaty long jumps; dust storm cuts visibility | Navigation Module | 4 |
 | 2 | Mercury | Top-down stealth | 430 °C day / −180 °C night → sun line sweeps, heat meter, hide in crater shadow | Solar Panel Array | 4 |
 | 3 | Venus | Timed survival | 465 °C, 92 bar pressure → pressure meter only slows with cooling canisters | Hull Plating | 3 |
@@ -52,7 +52,7 @@ all planets and the educational coverage stays wide without building two more le
 
 ### Never cut, no matter what
 
-Tutorial, Laila's dialogue + hints, the part-collection loop, the fact display, win and lose states.
+Tutorial, Laika's dialogue + hints, the part-collection loop, the fact display, win and lose states.
 Those are the story and the judging criteria.
 
 ---
@@ -124,7 +124,7 @@ space-game/
   data/
     planets.json          # [Sanghaar] map data, facts, unlock rules
     levels/*.json         # [Sanghaar] per-level params
-    dialogue/*.json       # [Sanghaar] Laila lines
+    dialogue/*.json       # [Sanghaar] Laika lines
     cache/apod.json       # [Sulaiman] fetched once by tools/fetch_apod.py
   assets/
     fonts/  images/  sounds/   # optional; game runs with none of them
@@ -211,7 +211,7 @@ hearts 5/3/2, hint idle 20/45/∞ seconds.
 
 ```json
 {
-  "speaker": "Laila",
+  "speaker": "Laika",
   "lines": [
     { "trigger": "start",   "text": "Three point seven one metres per second squared. That is Mars gravity — thirty-eight percent of home. Jump like you mean it." },
     { "trigger": "storm",   "text": "Dust storm rolling in. Visibility is dropping. Keep moving toward the light." },
@@ -248,9 +248,9 @@ hearts 5/3/2, hint idle 20/45/∞ seconds.
 
 ### Level 0 — Earth orbit (tutorial)
 
-- **Goal:** learn move, interact, hint button; meet Laila; open the map.
+- **Goal:** learn move, interact, hint button; meet Laika; open the map.
 - **Layout:** single screen, wrecked ship, three floating markers: move to marker → pick up a
-  small item → press `H` when Laila prompts.
+  small item → press `H` when Laika prompts.
 - **Win:** all three tasks. **Lose:** none. **Fail-safes:** no hazards.
 - **Done when:** a first-time player finishes in under 90 s without instructions.
 - **JSON:** `move_speed`, `markers` (positions), `hint_rules`.
@@ -266,7 +266,7 @@ hearts 5/3/2, hint idle 20/45/∞ seconds.
 - **Hazards:** gaps (fall → last checkpoint), 2 chasers, 1 turret, storm.
 - **Hearts:** 3 (difficulty-scaled). **Win:** pick up part. **Lose:** hearts 0 → checkpoint respawn,
   deaths++.
-- **Laila beats:** start (gravity fact), first storm (move toward light), 3 deaths (jump timing), win.
+- **Laika beats:** start (gravity fact), first storm (move toward light), 3 deaths (jump timing), win.
 - **Done when:** winnable and losable; storm never flashes faster than 1 Hz.
 - **Effort:** M (biggest single file).
 
@@ -278,7 +278,7 @@ hearts 5/3/2, hint idle 20/45/∞ seconds.
 - **Layout:** crater shadows as safe pockets; the player must stay ahead of or behind the line.
 - **Hazards:** heat meter, 2–3 patrol drones. (Cold slow-zones are optional; drop first.)
 - **Win:** reach part. **Lose:** heat full 3× or hearts 0. **Hearts:** 3.
-- **Laila beats:** start (430/−180 swing), meter orange (hide in a crater), win (why extremes).
+- **Laika beats:** start (430/−180 swing), meter orange (hide in a crater), win (why extremes).
 - **Done when:** a first-timer survives the first sweep; meter legible at a glance.
 - **Effort:** M.
 
@@ -290,7 +290,7 @@ hearts 5/3/2, hint idle 20/45/∞ seconds.
   (slower acceleration than Mars).
 - **Hazards:** acid pools (damage over time), 1 chaser. Falling debris is optional.
 - **Win:** 3 fragments + exit before timer/meter. **Lose:** pressure full or timer 0.
-- **Laila beats:** start (465 °C, 92 bar), mid (countdown), win (hotter than Mercury).
+- **Laika beats:** start (465 °C, 92 bar), mid (countdown), win (hotter than Mercury).
 - **Done when:** winnable in 90 s with ~20 s to spare; timer never invisible.
 - **Effort:** S (reuses meter, pickups, chaser).
 
@@ -313,7 +313,7 @@ is cut, not carried.
 | Phase | Hours | Owner(s) | Deliverable | Gate |
 |---|---|---|---|---|
 | **P0 Kickoff** | H0–H1 | both | repo cloned, venv, `pygame-ce` installs, branches made, these docs read, ownership confirmed | `python main.py` opens a window |
-| **P1 Skeleton & contracts** | H1–H4 | Sulaiman: scene manager, GameState, save, assets/audio, settings. Sanghaar: JSON schema, loader, tutorial data, Laila script, entity base, procedural art helpers | menu → dummy scene → back | **G1 merge** |
+| **P1 Skeleton & contracts** | H1–H4 | Sulaiman: scene manager, GameState, save, assets/audio, settings. Sanghaar: JSON schema, loader, tutorial data, Laika script, entity base, procedural art helpers | menu → dummy scene → back | **G1 merge** |
 | **P2 Vertical slice** | H4–H7 | Sulaiman: HUD, DialogueBox, Button. Sanghaar: tutorial scene + hints | A stranger finishes the tutorial and can read a fact | **G2 merge** |
 | **P3 Mars** | H7–H11 | Sanghaar: platformer, storm, chaser, turret. Sulaiman: hearts, Meter base, pause overlay | Mars winnable **and** losable, restart is fair | **G3 merge** |
 | **P4 Mercury** | H11–H15 | Sanghaar: sun sweep, heat meter wiring, patrols. Sulaiman: map screen with unlocks + part icons | Mercury winnable from the map after tutorial | **G4 merge** |
@@ -329,7 +329,7 @@ is cut, not carried.
 1. `git clone`, `python -m venv .venv`, activate, `pip install pygame-ce`, freeze requirements.
 2. Confirm `import pygame` is pygame-ce (`pygame.version.ver`).
 3. Both create branches: `feat/engine`, `feat/levels`.
-4. Send the team a 5-line message: name is Laila, scope is 5 levels, desktop demo, we need facts
+4. Send the team a 5-line message: name is Laika, scope is 5 levels, desktop demo, we need facts
    confirmed (table in §5), art is procedural.
 5. `tools/fetch_apod.py` run by Sulaiman **once**, commit `data/cache/apod.json`.
 
@@ -403,7 +403,7 @@ already safe.
 - [ ] Every level loads from JSON; no magic numbers in scene files.
 - [ ] Every level can be **won** and **lost**; both result screens work.
 - [ ] Deaths respawn at a fair checkpoint; no infinite fall loops.
-- [ ] Laila hints fire on idle (45 s), 3 deaths, and `H`; text is readable at 1280×720.
+- [ ] Laika hints fire on idle (45 s), 3 deaths, and `H`; text is readable at 1280×720.
 - [ ] Part pickup shows on the HUD and persists after restart (save/load).
 - [ ] Pause (Esc) works in all scenes; mute works; volume never stuck at 0.
 - [ ] Timer and meters are visible, never covered by the dialogue box.
@@ -436,13 +436,14 @@ Do **not** cut: tutorial, dialogue/hints, part loop, fact display, win/lose, pau
 ## 11. Three-minute demo script (for judges)
 
 1. **0:00** — Boot screen: APOD image with title and "data: NASA APOD".
-2. **0:15** — Menu → map. Say: "Three parts, seven planets, one ride home."
-3. **0:30** — Tutorial: Laila introduces the mission and the parts; collect the first marker.
-4. **1:00** — Mars: jump in 38% gravity, a dust storm hits, recover the Navigation Module.
-5. **1:40** — Mercury: outrun the sun line, hide in a crater, heat meter saved you.
-6. **2:15** — Venus: 92 atmospheres, 90 seconds, three fragments, escape.
-7. **2:45** — Earth: drag the parts on, facts recap, stats screen.
-8. **3:00** — Close: "Every mechanic is a real planetary fact — gravity, sunlight, pressure.
+2. **0:15** — Menu → map. Say: "Seven parts, seven worlds, one ride home."
+3. **0:30** — Tutorial: Laika introduces the mission and the parts; collect the first marker.
+4. **0:50** — Mercury: the sun line sweeps, heat waves rise, recover the Solar Panel Array.
+5. **1:15** — Venus: acid rain and geysers, recover the Hull Plating.
+6. **1:40** — Mars: jump in 38% gravity, a dust storm swallows the screen, recover the Navigation Module.
+7. **2:05** — Jupiter → Neptune montage: storm platforms, ring debris, tilted haze, supersonic winds.
+8. **2:35** — Earth: drag all seven parts on, facts recap, stats screen with best times.
+9. **3:00** — Close: "Every mechanic is a real planetary fact — sunlight, pressure, gravity, wind.
    Cached so it runs offline."
 
 ---
@@ -464,7 +465,7 @@ Do **not** cut: tutorial, dialogue/hints, part loop, fact display, win/lose, pau
 
 ## 13. Open items for Victoria / the team
 
-1. **Name confirmed: Laila** — reply "yes" so art and dialogue files can be finalised.
+1. **Name confirmed: Laika** — reply "yes" so art and dialogue files can be finalised.
 2. **Scope confirmed:** tutorial + Mars + Mercury + Venus + Earth assembly. Jupiter/Saturn become
    fact cards. Object now or after H4 it is expensive.
 3. **Resolution 1280×720**, procedural art. If Bryan has sprites, send them by H8 with fixed frame
@@ -482,7 +483,7 @@ Every feature below exists to defend a specific criterion. Point judges at them 
 | Criterion | What the game does | Where judges see it |
 |---|---|---|
 | **Impact** | Teaches real planetary science through mechanics rather than text; difficulty settings and accessibility make it playable by anyone; fact logging rewards curiosity | Fact cards on the map, stats screen, Easy/Normal/Hard + Large text options in Settings |
-| **Creativity** | One idea carries the whole design: *the fact is the mechanic*. Laila (a holographic navigator) delivers every fact diegetically, never as a pop-up | Laila's dialogue, hologram art, fact-driven meters |
+| **Creativity** | One idea carries the whole design: *the fact is the mechanic*. Laika (a holographic navigator) delivers every fact diegetically, never as a pop-up | Laika's dialogue, hologram art, fact-driven meters |
 | **Validity** | Numbers are real and sourced: Mars 3.71 m/s², Mercury −180/430 °C, Venus 92 bar/465 °C. Runs offline, 60 FPS, tested by automated smoke + playtest suites | In-game meters show real units (°C, bar); `tools/smoke_test.py` and `tools/playtest.py` in the repo |
 | **Relevance** | NASA data is the core loop, not decoration: planetary fact sheets drive every rule, cached APOD opens the game, sources are cited on every fact card | Boot screen (APOD credit), map fact cards ("NASA Planetary Fact Sheet"), ending stats footer |
 | **Presentation** | 3-minute demo script (§11) with a fixed story beat per minute | Demo video + README |

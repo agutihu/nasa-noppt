@@ -229,3 +229,47 @@ class PlatformerPlayer(Player):
                 self.pos.y = self.rect.centery
                 self.vel.y = 0.0
         self.on_ground = was_ground
+
+
+class CombatPlayer(PlatformerPlayer):
+    """Platformer player with a blaster: laser bolts, stomp bounces, ice friction."""
+
+    def __init__(self, x: float, y: float, cfg: dict, state, hud=None) -> None:
+        super().__init__(x, y, cfg, state, hud)
+        self.base_friction = self.friction
+        self.cooldown = 0.0
+        self.fire_flash = 0.0
+        self.airborne = False
+
+    def try_fire(self) -> bool:
+        """Spawn a laser bolt if the blaster is ready. Returns True when fired."""
+        if self.dead or self.cooldown > 0.0:
+            return False
+        self.cooldown = float(self.cfg.get("laser_cooldown", 0.38))
+        self.fire_flash = 1.0
+        audio.play("laser")
+        return True
+
+    def bounce(self, strength: float = -400.0) -> None:
+        """Kick after stomping an enemy."""
+        self.vel.y = strength
+        self.on_ground = False
+
+    def update(self, dt: float, keys, bounds: pygame.Rect | None = None, solids=None) -> None:
+        self.cooldown = max(0.0, self.cooldown - dt)
+        self.fire_flash = max(0.0, self.fire_flash - dt * 4.0)
+        super().update(dt, keys, bounds, solids)
+        self.airborne = not self.on_ground
+
+    def draw(self, screen: pygame.Surface) -> None:
+        flashing = self.invulnerable and int(self.invuln * 14) % 2 == 0
+        sprites.draw_astronaut(
+            screen,
+            (round(self.pos.x), round(self.pos.y)),
+            self.t,
+            moving=self.moving,
+            facing=self.facing,
+            hurt=1.0 if flashing else 0.0,
+            airborne=self.airborne,
+            firing=self.fire_flash,
+        )

@@ -18,11 +18,12 @@ from scenes.boot import BootScene
 from scenes.menu import MenuScene
 from scenes.map import MapScene
 from scenes.tutorial import TutorialScene
-from scenes.mars import MarsScene
-from scenes.mercury import MercuryScene
-from scenes.venus import VenusScene
+from scenes.world_level import make_world_scene
 from scenes.ending import EndingScene
 from ui.pause import PauseScene
+
+# every mission planet runs the shared world engine; each is its own scene name
+WORLD_PLANETS = ("mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune")
 
 
 def _enable_dpi_awareness() -> None:
@@ -57,9 +58,8 @@ async def main() -> int:
     game.manager.register(settings.MENU, MenuScene)
     game.manager.register(settings.MAP, MapScene)
     game.manager.register(settings.TUTORIAL, TutorialScene)
-    game.manager.register(settings.MARS, MarsScene)
-    game.manager.register(settings.MERCURY, MercuryScene)
-    game.manager.register(settings.VENUS, VenusScene)
+    for planet_id in WORLD_PLANETS:
+        game.manager.register(planet_id, make_world_scene(planet_id))
     game.manager.register(settings.ENDING, EndingScene)
     game.manager.register(settings.PAUSE, PauseScene)
 

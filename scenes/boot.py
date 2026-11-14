@@ -90,7 +90,7 @@ class BootScene(Scene):
         )
         text.draw_centered(
             screen,
-            "You are stranded in orbit. Laila has three parts to find and one way home.",
+            "You are stranded in orbit. Laika has seven parts to find and one way home.",
             (settings.WIDTH // 2, 330),
             24,
             settings.DIM,

@@ -182,12 +182,12 @@ class MenuScene(Scene):
         text.draw(screen, settings.TITLE, (118, 104), 56, settings.INK, display=True)
         text.draw(screen, settings.SUBTITLE, (120, 178), 30, settings.ACCENT)
 
-        sprites.draw_laila(screen, (988, 300), self.t, scale=1.5)
-        text.draw(screen, "LAILA", (988, 372), 16, settings.ACCENT, display=True, center=True)
+        sprites.draw_laika(screen, (988, 300), self.t, scale=1.5)
+        text.draw(screen, "LAIKA", (988, 372), 16, settings.ACCENT, display=True, center=True)
         text.draw(screen, "navigation core", (988, 392), 18, settings.DIM, center=True, shadow=False)
         text.draw(
             screen,
-            "Three parts. Three planets.\nOne ride home.",
+            "Seven parts. Seven worlds.\nOne ride home.",
             (988, 432),
             22,
             settings.INK,

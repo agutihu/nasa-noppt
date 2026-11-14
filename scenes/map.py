@@ -6,7 +6,7 @@ import math
 
 import pygame
 
-from art import backgrounds, planets
+from art import backgrounds, planets, sprites
 from core import audio, color as core_color, levels, settings, text
 from core.scene import Scene
 from ui.button import Button
@@ -179,26 +179,20 @@ class MapScene(Scene):
         )
         return width
 
-    def _draw_part_chips(self, screen: pygame.Surface) -> None:
+    def _draw_part_icons(self, screen: pygame.Surface) -> None:
         by_part = {p.get("part"): p for p in self.planets if p.get("part")}
         x = 204
         for part in self.state.required_parts():
             planet = by_part.get(part)
-            pcolor = hex_to_rgb(planet.get("color", "#8fa3c8")) if planet else settings.ACCENT
+            pcolor = hex_to_rgb(planet.get("part_color", planet.get("color", "#8fa3c8"))) if planet else settings.ACCENT
             owned = self.state.has_part(part)
-            label = self._short(part, 118)
-            chip_w = max(150, text.measure(label, 14)[0] + 56)
-            rect = pygame.Rect(x, 30, chip_w, 30)
-            pygame.draw.rect(screen, (9, 14, 26), rect, border_radius=15)
-            pygame.draw.rect(
-                screen, settings.GREEN if owned else settings.PANEL_EDGE, rect, 1, border_radius=15
-            )
-            pygame.draw.circle(screen, pcolor if owned else settings.FAINT, (rect.x + 17, rect.centery), 5)
-            text.draw(
-                screen, label, (rect.x + 32, rect.centery), 14,
-                settings.INK if owned else settings.DIM, middle=True, shadow=False,
-            )
-            x += chip_w + 10
+            center = (x + 11, 45)
+            if owned:
+                sprites.draw_part(screen, center, 9, pcolor, self.t, glow=False)
+            else:
+                pygame.draw.circle(screen, settings.PANEL_EDGE, center, 9, 1)
+                pygame.draw.circle(screen, (20, 30, 48), center, 7)
+            x += 26
 
     # --- input --------------------------------------------------------------
     def handle_events(self, events: list[pygame.event.Event]) -> None:
@@ -225,6 +219,13 @@ class MapScene(Scene):
                 planet = self._find_at(event.pos)
                 if planet is not None:
                     self.select(planet)
+                    if planet.get("playable") and not self.state.is_unlocked(planet):
+                        prev = levels.previous_mission(planet["id"])
+                        prev_name = next(
+                            (p["name"] for p in self.planets if p["id"] == prev), prev
+                        ) if prev else "the tutorial"
+                        self.toast = f"Locked - win {prev_name} first"
+                        self.toast_timer = 3.0
                 elif not self._panel_rect().collidepoint(event.pos):
                     self.deselect()
 
@@ -302,6 +303,8 @@ class MapScene(Scene):
         for planet in self.planets:
             px, py = planet["_pos"]
             color = hex_to_rgb(planet.get("color", "#8fa3c8"))
+            unlocked = self.state.is_unlocked(planet)
+            playable = planet.get("playable")
             planets.draw_planet(
                 screen,
                 (px, py),
@@ -314,6 +317,11 @@ class MapScene(Scene):
                 ring=planet.get("ring", False),
                 ring_color=hex_to_rgb(planet.get("ring_color", "#d2c4b4")),
             )
+            if playable and not unlocked:
+                self._draw_padlock(screen, px, py, int(planet["radius"]))
+                if planet == hover:
+                    self._draw_hover_tooltip(screen, planet, subtitle="Locked")
+                continue
             if self.selected == planet:
                 pygame.draw.circle(screen, settings.ACCENT, (px, py), int(planet["radius"]) * 1.6, 2)
                 pygame.draw.circle(screen, settings.ACCENT, (px, py), int(planet["radius"]) * 1.9, 1)
@@ -321,6 +329,14 @@ class MapScene(Scene):
             elif planet == hover:
                 draw_ring(screen, px, py, int(planet["radius"]) * 1.9 + 10, settings.ACCENT, self.t)
                 self._draw_hover_tooltip(screen, planet)
+
+    def _draw_padlock(self, screen: pygame.Surface, cx: int, cy: int, radius: int) -> None:
+        """Small padlock above a locked planet."""
+        lock_y = cy - radius - 16
+        body = pygame.Rect(cx - 6, lock_y, 12, 9)
+        pygame.draw.rect(screen, (10, 16, 30), body, border_radius=2)
+        pygame.draw.rect(screen, settings.DANGER, body, 1, border_radius=2)
+        pygame.draw.arc(screen, settings.DANGER, (cx - 4, lock_y - 7, 8, 9), 0, 180, 1)
 
     def _draw_status_bar(self, screen: pygame.Surface) -> None:
         text.draw(screen, "SOLAR SYSTEM", (20, 16), 20, settings.ACCENT, display=True, shadow=False)
@@ -333,7 +349,7 @@ class MapScene(Scene):
             settings.INK,
             shadow=False,
         )
-        self._draw_part_chips(screen)
+        self._draw_part_icons(screen)
 
     def _draw_panel(self, screen: pygame.Surface) -> None:
         panel = self._panel_rect()
@@ -447,19 +463,31 @@ class MapScene(Scene):
                 settings.DIM, middle=True, shadow=False,
             )
         elif playable:
+            unlocked = self.state.is_unlocked(planet)
             owned = self.state.has_part(part) if part else False
-            if part:
-                pygame.draw.circle(
-                    screen, pcolor if owned else settings.FAINT, (x + 8, part_row_cy), 6,
-                    0 if owned else 1,
-                )
+            if unlocked:
+                if part:
+                    pygame.draw.circle(
+                        screen, pcolor if owned else settings.FAINT, (x + 8, part_row_cy), 6,
+                        0 if owned else 1,
+                    )
+                    text.draw(
+                        screen, self._short(part, width - 170, 16), (x + 22, part_row_cy), 16,
+                        settings.INK, middle=True, shadow=False,
+                    )
+            else:
+                prev = levels.previous_mission(planet["id"])
+                prev_name = next(
+                    (p["name"] for p in self.planets if p["id"] == prev), prev
+                ) if prev else "the tutorial"
+                pygame.draw.circle(screen, settings.FAINT, (x + 8, part_row_cy), 6, 1)
                 text.draw(
-                    screen, self._short(part, width - 170, 16), (x + 22, part_row_cy), 16,
-                    settings.INK, middle=True, shadow=False,
+                    screen, f"Win {prev_name} to unlock", (x + 22, part_row_cy), 16,
+                    settings.DIM, middle=True, shadow=False,
                 )
-            if owned:
+            if unlocked and owned:
                 self._chip(screen, cy=part_row_cy, label="RECOVERED", color=settings.GREEN, right=panel.right - 34)
-            elif self.state.is_unlocked(planet):
+            elif unlocked:
                 self._chip(screen, cy=part_row_cy, label="MISSION READY", color=settings.ACCENT, right=panel.right - 34)
             else:
                 self._chip(screen, cy=part_row_cy, label="LOCKED", color=settings.DANGER, right=panel.right - 34)
@@ -482,13 +510,15 @@ class MapScene(Scene):
             settings.INK, center=True, middle=True, shadow=False,
         )
 
-    def _draw_hover_tooltip(self, screen: pygame.Surface, planet) -> None:
+    def _draw_hover_tooltip(self, screen: pygame.Surface, planet, subtitle: str | None = None) -> None:
         name = planet["name"]
-        width = text.measure(name, 16)[0] + 20
+        label = f"{name} - {subtitle}" if subtitle else name
+        width = text.measure(label, 16)[0] + 20
         rect = pygame.Rect(planet["_pos"][0] - width // 2, planet["_pos"][1] - 36, width, 22)
         pygame.draw.rect(screen, settings.PANEL, rect, border_radius=6)
         pygame.draw.rect(screen, settings.PANEL_EDGE, rect, 1, border_radius=6)
         text.draw(
-            screen, name, (rect.centerx, rect.centery), 16, settings.INK,
+            screen, label, (rect.centerx, rect.centery), 16,
+            settings.DANGER if subtitle else settings.INK,
             center=True, middle=True, shadow=False,
         )

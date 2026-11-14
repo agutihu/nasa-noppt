@@ -1,12 +1,12 @@
 {
-  "speaker": "Laila",
+  "speaker": "Laika",
   "lines": [
-    { "trigger": "start", "text": "Venus. Surface pressure is ninety-two times Earth, and the ground sits near 465 degrees. Hotter than Mercury, even though it is farther from the sun." },
-    { "trigger": "start", "text": "The pressure in your suit only climbs. Cooling canisters slow it down, and you have ninety seconds. Three fragments, then get to the escape point." },
-    { "trigger": "countdown", "text": "Forty-five seconds left. Pressure is rising faster now - grab a canister on the way." },
-    { "trigger": "win", "text": "Hull Plating recovered. That is the last part - assemble the ship and let's go home." },
-    { "trigger": "hint", "text": "Canisters are your lifeline. Never pass one without topping up." },
-    { "trigger": "hint", "text": "Acid pools eat through the suit. Go around, never through." },
-    { "trigger": "idle", "text": "The glowing fragments are the plating. The exit is marked with a beacon." }
+    { "trigger": "start", "text": "Venus. Surface pressure is ninety-two times Earth, and the ground sits near 465 degrees - hotter than Mercury, even though it is farther from the sun." },
+    { "trigger": "start", "text": "It is raining acid. Do not touch the green pools. The saucers love this haze - keep your blaster warm." },
+    { "trigger": "part", "text": "Hull Plating recovered. Watch the acid - the walk back matters as much as the walk in." },
+    { "trigger": "win", "text": "Plating stowed. Ninety-two atmospheres out there, and we just walked it." },
+    { "trigger": "hint", "text": "Acid pools glow green. Around, never through." },
+    { "trigger": "hint", "text": "Saucers telegraph their shots with a glow. Jump sideways as they fire." },
+    { "trigger": "death_3", "text": "Stomp the crawlers from above - their shells laugh at everything else." }
   ]
 }

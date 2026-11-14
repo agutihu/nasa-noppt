@@ -74,7 +74,7 @@ def load_dialogue(relative: str) -> dict:
 
     File shape::
 
-        {"speaker": "Laila", "lines": [{"trigger": "start", "text": "..."}]}
+        {"speaker": "Laika", "lines": [{"trigger": "start", "text": "..."}]}
     """
     name = relative.replace("\\", "/")
     if name.startswith("dialogue/"):
@@ -93,7 +93,7 @@ def load_dialogue(relative: str) -> dict:
         by_trigger.setdefault(trigger, []).append(text)
 
     return {
-        "speaker": config.get("speaker", "Laila"),
+        "speaker": config.get("speaker", "Laika"),
         "lines": by_trigger,
         "triggers": list(by_trigger.keys()),
     }
@@ -115,6 +115,25 @@ def playable_levels() -> list[dict]:
         and planet["playable"] not in (None, "ending")
         and planet.get("part")
     ]
+
+
+def mission_chain() -> list[str]:
+    """Mission planets in the order they must be completed (finale excluded)."""
+    return [
+        planet["id"]
+        for planet in load_planets()["planets"]
+        if planet.get("playable") and planet["playable"] != "ending"
+    ]
+
+
+def previous_mission(planet_id: str) -> str | None:
+    """The mission that must be won before this one, or None for the first."""
+    chain = mission_chain()
+    if planet_id in chain:
+        index = chain.index(planet_id)
+        if index > 0:
+            return chain[index - 1]
+    return None
 
 
 def required_parts() -> list[str]:

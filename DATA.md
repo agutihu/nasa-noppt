@@ -62,7 +62,7 @@ Shape:
 
 ```json
 {
-  "speaker": "Laila",
+  "speaker": "Laika",
   "lines": [
     { "trigger": "start", "text": "..." },
     { "trigger": "hint", "text": "..." }
@@ -75,10 +75,10 @@ Triggers used across levels:
 - `start` — opening lines.
 - `marker` / `crate` / `hint_prompt` / `win` / `idle` — tutorial task lines.
 - `storm` — Mars dust storm warning.
-- `death_3` — Laila hint after third death.
+- `death_3` — Laika hint after third death.
 - `heat` — Mercury heat warning.
 - `countdown` — Venus half-time countdown.
-- `hint` — manual Laila hint (H).
+- `hint` — manual Laika hint (H).
 
 ## `data/cache/apod.json`
 

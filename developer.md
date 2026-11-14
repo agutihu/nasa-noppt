@@ -14,7 +14,7 @@ Need a change in the other person's file? Post the ask in the chat, do not edit 
 |---|---|---|
 | Role | Lead, gameplay & content | Engine & shell |
 | Owns | `scenes/` planet levels, `entities/`, `art/`, `data/`, `core/levels.py` | `main.py`, `core/` (except `levels.py`), `ui/`, `scenes/boot.py`, `menu.py`, `map.py`, `ending.py`, `tools/` |
-| Builds | Tutorial, Mars, Mercury, Venus, enemies, hazards, pickups, Laila's script, level tuning | Scene manager, GameState, save/load, HUD, dialogue box, meters, pause, map, APOD, ending UI |
+| Builds | Tutorial, Mars, Mercury, Venus, enemies, hazards, pickups, Laika's script, level tuning | Scene manager, GameState, save/load, HUD, dialogue box, meters, pause, map, APOD, ending UI |
 | Cannot touch | `ui/`, `core/scene.py`, `core/game_state.py`, `core/save.py` | `entities/`, `art/`, `data/levels`, `data/dialogue`, planet scenes |
 | Branch | `feat/levels` | `feat/engine` |
 | Gate reviews | Merges G1, G3, G5, G7 | Merges G2, G4, G6 |
@@ -108,8 +108,8 @@ class Meter:                      # heat, pressure, fuel
     def set(self, value); def update(self, dt); def draw(self, screen)
 
 class DialogueBox:
-    def show(self, text, speaker="Laila", on_done=None): ...
-    def queue(self, lines: list[str], speaker="Laila", on_done=None): ...
+    def show(self, text, speaker="Laika", on_done=None): ...
+    def queue(self, lines: list[str], speaker="Laika", on_done=None): ...
     def handle_events(self, events) -> bool   # True if it consumed input
     def update(self, dt); def draw(self, screen)
     def is_active(self) -> bool
@@ -185,7 +185,7 @@ lets Sanghaar finish a level that Sulaiman dresses later.
 | ID | Package | Files | Est. | Done when |
 |---|---|---|---|---|
 | G1 | JSON schema + `core/levels.py` loader/validator + path helper | `core/levels.py`, `data/levels/*.json` | 1 h | bad JSON gives a readable error, not a crash |
-| G2 | `data/planets.json` (5 playable/archive entries) + Laila scripts | `data/planets.json`, `data/dialogue/*.json` | 1 h | every level has start/hint/win lines |
+| G2 | `data/planets.json` (5 playable/archive entries) + Laika scripts | `data/planets.json`, `data/dialogue/*.json` | 1 h | every level has start/hint/win lines |
 | G3 | Art primitives: starfield, planet disc with bands, ground tiles, glow, part icons | `art/*.py` | 1.5 h | identical look on all levels, no PNGs needed |
 | G4 | `entities/player.py` shared movement + top-down variant | `entities/player.py` | 1.5 h | 8-dir move, dt-based, no drift |
 | G5 | Platformer controller: gravity from JSON, variable jump, coyote time, checkpoints | `entities/player.py` | 1.5 h | Mars jumps feel floaty but controlled |
@@ -338,7 +338,7 @@ downgrade to plain `pygame`.
 `scenes/menu.py`, `scenes/boot.py`, `scenes/ending.py` → Sulaiman.
 `entities/*`, `art/*`, `data/levels/*`, `data/dialogue/*`, `data/planets.json` → Sanghaar.
 
-**Never cut:** tutorial, Laila's dialogue and hints, the part-collection loop, the fact display,
+**Never cut:** tutorial, Laika's dialogue and hints, the part-collection loop, the fact display,
 win/lose states, pause. Everything else is negotiable.
 
 ---
@@ -351,7 +351,7 @@ ownership:
 | Criterion | Owner | Standing deliverable |
 |---|---|---|
 | Impact | Sanghaar | Fact logging, stats screen, difficulty + text-size + mute settings, accessible hazards |
-| Creativity | Sanghaar | Laila's dialogue and hologram, fact-as-mechanic level rules |
+| Creativity | Sanghaar | Laika's dialogue and hologram, fact-as-mechanic level rules |
 | Validity | Sulaiman | Tested game loop (`tools/smoke_test.py`, `tools/playtest.py`), offline APOD, 60 FPS |
 | Relevance | Sanghaar | Real units on meters, sourced fact cards, NASA data in JSON (checked by Sulaiman) |
 | Presentation | Sanghaar (docs) → presenter | Demo script in `plan.md` §11, README quickstart, screenshots |

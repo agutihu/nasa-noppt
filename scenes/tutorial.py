@@ -98,7 +98,7 @@ class TutorialScene(Scene):
             return
         self.crate.taken = True
         self.stage = "got_crate"
-        self.hud.set_objective("Press H to ask Laila for a hint.")
+        self.hud.set_objective("Press H to ask Laika for a hint.")
         self._queue_trigger("crate", self._crate_done)
 
     def _crate_done(self) -> None:

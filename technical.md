@@ -96,7 +96,7 @@ One direction, no module-level mutables.
 ## HUD and Dialogue Contracts
 
 - `HUD` owns hearts, parts inventory, timer, and objective text. Levels never draw hearts.
-- `DialogueBox` owns all Laila text: typewriter, queue, hint mode, advance keys (Space/Enter/
+- `DialogueBox` owns all Laika text: typewriter, queue, hint mode, advance keys (Space/Enter/
   click). While active, gameplay updates are frozen except dialogue.
 - `Meter` owns value for heat / pressure / fuel; levels set values through `set`.
 

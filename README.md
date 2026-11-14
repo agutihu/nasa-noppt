@@ -2,19 +2,25 @@
 
 A solar system repair mission — NASA Space Apps Challenge 2026
 
-A stranded pilot must cross the solar system, recover three ship parts, and fly home.
+A stranded pilot must cross the solar system, recover seven ship parts from seven worlds, and fly home.
 Every level is built on one real planetary fact, and that fact is the mechanic:
 
-*   **Mars** — 3.71 m/s² gravity (38% of Earth) makes you jump long and floaty; dust storms cut visibility.
-*   **Mercury** — 430 °C day / −180 °C night; outrun the sweeping sun line and hide in crater shadows while a heat meter rises.
-*   **Venus** — 92 × Earth pressure and 465 °C heat; collect three hull fragments in 90 seconds before the pressure meter fills.
-*   **Earth** — drag the recovered parts onto the ship, recap the facts, land.
+*   **Mercury** — 430 °C day / −180 °C night; the sun line sweeps the surface and heat waves rise from the regolith. Recover the **Solar Panel Array**.
+*   **Venus** — 92 × Earth pressure and 465 °C heat under an acid-rain sky. Recover the **Hull Plating**.
+*   **Mars** — 3.71 m/s² gravity (38% of Earth) makes every jump long and floaty; dust storms drop visibility to a circle around you. Recover the **Navigation Module**.
+*   **Jupiter** — no ground, only storm platforms above the cloud decks in 2.5 g. Recover the **Shield Generator**.
+*   **Saturn** — icy ring debris rains down between floating moonlets. Recover the **Fuel Cells**.
+*   **Uranus** — 97° tilt: the sun creeps along the horizon through methane haze and sideways diamond rain. Recover the **Thermal Regulator**.
+*   **Neptune** — 2,100 km/h supersonic winds that shove everything, including you. Recover the **Signal Antenna**.
+*   **Earth** — drag all seven parts onto the ship in the assembly bay, recap the facts, land.
 
-Laila, the ship's navigation core, guides the player with dialogue and hints. Cached NASA APOD data appears on the boot screen so the game runs fully offline.
+Missions unlock one after another: win Mercury to open Venus, win Venus to open Mars, and so on.
 
-The full playable arc — tutorial, Mars, Mercury, Venus, Earth finale — is implemented, and the whole loop was verified end-to-end with a scripted headless playtest.
+Laika, the ship's navigation core, guides the player with dialogue and hints. Every world has its own weather, parallax skyline, hazards, ground aliens, and patrol saucers. Cached NASA APOD data appears on the boot screen so the game runs fully offline.
 
-Target play time: about 14 minutes, so a judge can see the full arc in one sitting.
+The full playable arc — tutorial, seven planet worlds, Earth finale — is implemented, and the whole loop was verified end-to-end with a scripted headless playtest.
+
+Target play time: about 25–30 minutes, with mid-level checkpoints so a judge can see the full arc in one sitting.
 
 ## Installation
 
@@ -62,14 +68,15 @@ The idea: space is hostile, and each planet's hostility becomes a playable rule.
 
 ### Gameplay
 
-*   Five levels implemented: Earth orbit tutorial, Mars platformer, Mercury stealth, Venus timed survival, Earth assembly finale.
+*   Nine levels implemented: Earth orbit tutorial, seven full planet worlds (each with its own weather, hazards, and enemies), and the Earth assembly finale.
 *   Each level teaches one verified NASA fact; facts are displayed on the solar map and recapped at the end.
-*   Laila dialogue system with typewriter text, queued lines, idle hints, and death-based hints.
-*   Part-collection loop with persistent save/load (progress survives a restart).
-*   Difficulty settings (Easy / Normal / Hard) that scale hazard speed, timer length, hearts, and hint frequency.
+*   Laika dialogue system with typewriter text, queued lines, idle hints, and death-based hints.
+*   Part-collection loop with persistent save/load (progress survives a restart) and per-level best times.
+*   Difficulty settings (Easy / Normal / Hard) that scale enemy and hazard speed, storm timing, hearts, and hint frequency.
+*   Combat in every world: E fires the blaster, or stomp walkers from above; saucers shoot back.
 *   Pause overlay (Resume / Restart / Mute / Quit to map) available in every scene.
-*   Solar system map hub with playable missions and read-only "Data Archive" fact cards for Jupiter, Saturn, Uranus, and Neptune.
-*   Stats screen at the end: mission time, losses, parts recovered, facts learned.
+*   Solar system map hub with sequential unlocks and a circular minimap, stopwatch, and labeled part target in every world — no time-limit losses, the stopwatch only records how long you took.
+*   Mission briefing card before each world, and a stats screen at the end: total time, losses, parts recovered, facts learned, and best time per mission.
 
 ### Technical
 
@@ -120,44 +127,43 @@ HOMEBOUND/
 ├── scenes/                     # Screens
 │   ├── boot.py                 # APOD splash screen
 │   ├── menu.py                 # Title menu + settings
-│   ├── map.py                  # Solar system hub, unlocks, archive cards
+│   ├── map.py                  # Solar system hub, sequential unlocks, part icons
 │   ├── tutorial.py             # Earth orbit tutorial
-│   ├── mars.py                 # Mars platformer
-│   ├── mercury.py              # Mercury stealth
-│   ├── venus.py                # Venus timed survival
-│   └── ending.py               # Earth assembly finale
+│   ├── world_level.py          # Shared 7-world engine (one scene class per planet)
+│   └── ending.py               # Earth assembly finale + stats
 │
 ├── entities/                   # Gameplay objects
-│   ├── player.py               # Shared health/damage + top-down + platformer controllers
+│   ├── player.py               # Combat astronaut controller (move/jump/fire)
 │   ├── pickups.py              # Parts, health, canisters, fragments, crates
-│   └── enemies.py              # Chaser, Patrol, Turret, Projectile
+│   └── enemies.py              # Walker aliens, patrol saucers, laser bolts
 │
 ├── ui/                         # UI widgets
-│   ├── hud.py                  # Hearts, parts inventory, timer, objective
-│   ├── dialogue_box.py         # Laila's typewriter dialogue + hints
+│   ├── hud.py                  # Hearts, 7-part inventory, target chip, stopwatch
+│   ├── dialogue_box.py         # Laika's typewriter dialogue + hints
 │   ├── meter.py                # Heat / pressure / fuel meters
 │   ├── button.py               # Mouse + keyboard buttons
 │   └── pause.py                # Pause overlay
 │
 ├── art/                        # Procedural drawing helpers
-│   ├── sprites.py              # Astronaut, Laila hologram, ship, drone, part icon, heart
+│   ├── sprites.py              # Astronaut, Laika hologram, ship, alien, saucer, part icons
 │   ├── planets.py              # Planet discs, bands, craters, rings, sun, orbits
+│   ├── world_bg.py             # Per-planet parallax skylines (skies, bands, ridges)
 │   └── backgrounds.py          # Starfields, nebulae, vignette, scanlines
 │
 ├── data/                       # All gameplay content
-│   ├── planets.json            # Map data, facts, unlock rules, archive cards
+│   ├── planets.json            # Map data, facts, part names, unlock chain
 │   ├── levels/
 │   │   ├── tutorial.json
-│   │   ├── mars.json
-│   │   ├── mercury.json
-│   │   └── venus.json
+│   │   ├── mercury.json … neptune.json   # one config per world
 │   ├── dialogue/
 │   │   ├── tutorial.json
-│   │   ├── mars.json
-│   │   ├── mercury.json
-│   │   └── venus.json
+│   │   ├── mercury.json … neptune.json   # Laika beats per world
 │   └── cache/
 │       └── apod.json           # Cached NASA APOD (offline fallback)
+│
+├── core/                       # (engine, see above)
+│   ├── world_gen.py            # Seeded per-planet terrain/platform/pickup generation
+│   └── weather.py              # Screen-space rain, dust, snow, lightning, meteors
 │
 ├── assets/                     # Optional; game runs without any of these
 │   └── fonts/
@@ -165,48 +171,46 @@ HOMEBOUND/
 │       └── VT323-Regular.ttf
 │
 ├── screenshots/                # Gameplay captures for the README
-│   ├── boot.png
-│   ├── menu.png
-│   ├── map.png
-│   ├── tutorial.png
-│   ├── mars.png
-│   ├── mercury.png
-│   ├── venus.png
-│   └── ending.png
 │
 └── tools/                      # Dev / QA tools
     ├── fetch_apod.py           # Caches NASA APOD once; committed result keeps game offline
-    ├── playtest.py             # Scripted end-to-end playtest of the full loop
+    ├── playtest.py             # Scripted end-to-end playtest of the full campaign
+    ├── shot_world.py           # Headless screenshot capture of every world
     └── smoke_test.py           # Headless smoke test: boot every scene, run frames
 ```
 
 ## Levels and mechanics (real planetary facts)
 
-| # | Level | Style | Real mechanic | Part recovered | Est. time |
-|---|---|---|---|---|---|
-| 0 | Earth orbit | Top-down tutorial | Movement, interact, hint button | — (meet Laila) | 1 min |
-| 1 | Mars | Platformer | 3.71 m/s² gravity → floaty long jumps; dust storm dims screen to a 120 px visibility circle every 25 s | Navigation Module | 4 min |
-| 2 | Mercury | Top-down stealth | 430 °C day / −180 °C night → sun line sweeps, heat meter, hide in crater shadow | Solar Panel Array | 4 min |
-| 3 | Venus | Timed survival | 465 °C, 92 bar pressure → pressure meter rises; cooling canisters slow it; 90 s limit | Hull Plating | 3 min |
-| 6 | Earth | Assembly + stats | Drag 3 parts onto the ship; each snaps with its planet fact; stats screen | — (ending) | 2 min |
+| # | Level | Real mechanic | Part recovered | Est. time |
+|---|---|---|---|---|
+| 0 | Earth orbit (tutorial) | Movement, jump, fire, hint button | — (meet Laika) | 1 min |
+| 1 | Mercury | 430 °C day / −180 °C night → sweeping sun line, heat waves, shadow hiding | Solar Panel Array | 4 min |
+| 2 | Venus | 465 °C, 92 bar → acid rain, geysers, crushing haze | Hull Plating | 4 min |
+| 3 | Mars | 3.71 m/s² gravity → floaty long jumps; dust storms drop visibility to a circle around you | Navigation Module | 4 min |
+| 4 | Jupiter | 2.5 g storm gravity → floating cloud platforms, lightning towers | Shield Generator | 4 min |
+| 5 | Saturn | Ring debris showers → falling ice hazards between moonlets | Fuel Cells | 4 min |
+| 6 | Uranus | 97° axial tilt → low horizon sun, methane haze, sideways rain | Thermal Regulator | 4 min |
+| 7 | Neptune | 2,100 km/h winds → constant sideways push, meteor showers | Signal Antenna | 4 min |
+| 8 | Earth | Assembly + stats | Drag all 7 parts onto the ship; each snaps with its planet fact | — (finale) | 2 min |
 
-Jupiter, Saturn, Uranus, and Neptune appear as read-only "Data Archive" fact cards on the solar map — their facts stay in the game without building separate levels.
+Every world is generated from its `data/levels/*.json` config with a fixed seed, so terrain, platforms, checkpoints, hazards, walkers, and saucers are identical on every machine. Mid-level checkpoints keep deaths fair, and each mission ends at a labeled part pedestal, then an exit pad.
 
-Total play time ≈ 14 minutes.
+Total play time ≈ 25–30 minutes.
 
 ## Player flow
 
 ```
 Boot (APOD splash, cached)
   → Menu (New mission / Continue / Settings / Quit)
-    → Solar map (hub; shows parts collected, unlocks)
+    → Solar map (hub; shows the 7 parts, sequential unlocks)
         → Tutorial (auto on first run)
-        → Mars | Mercury | Venus (any order, unlocked after tutorial)
-        → Earth finale (unlocked when all 3 parts collected)
+        → Mercury → Venus → Mars → Jupiter → Saturn → Uranus → Neptune (one at a time)
+        → Earth finale (unlocked when all 7 parts are collected)
     → Stats screen → Menu (or New Game)
 ```
 
-*   Any planet can be replayed; parts are per-part flags, not counts.
+*   Missions unlock strictly in order: win a world and the next padlock opens on the map.
+*   Any unlocked planet can be replayed for a better best time.
 *   Pause overlay works in every scene (Esc): Resume / Restart / Mute / Quit to map.
 *   Progress auto-saves on part pickup and on scene change; "Continue" loads it.
 
@@ -215,10 +219,11 @@ Boot (APOD splash, cached)
 | Action | Key |
 |---|---|
 | Move | WASD / arrow keys |
-| Jump (Mars platformer) | Space (hold for higher) |
+| Jump | Space (hold for higher) |
+| Fire blaster | E |
 | Pick up / interact | Walk into the item (proximity) |
-| Laila hint | H |
-| Advance dialogue | Space / Enter / click / E |
+| Laika hint | H |
+| Advance dialogue | Space / Enter / click |
 | Pause | Esc |
 | Menu navigation | Up/Down + Enter, or mouse |
 
@@ -253,9 +258,17 @@ python tools/fetch_apod.py
 
 ### Solar system
 
-| Map | Tutorial | Mars | Mercury | Venus | Ending |
-|---|---|---|---|---|---|
-| ![Solar map](screenshots/map.png) | ![Tutorial](screenshots/tutorial.png) | ![Mars](screenshots/mars.png) | ![Mercury](screenshots/mercury.png) | ![Venus](screenshots/venus.png) | ![Ending](screenshots/ending.png) |
+| Map | Tutorial | Mercury | Venus |
+|---|---|---|---|
+| ![Solar map](screenshots/map.png) | ![Tutorial](screenshots/tutorial.png) | ![Mercury](screenshots/mercury.png) | ![Venus](screenshots/venus.png) |
+
+| Mars | Jupiter | Saturn | Uranus |
+|---|---|---|---|
+| ![Mars](screenshots/mars.png) | ![Jupiter](screenshots/jupiter.png) | ![Saturn](screenshots/saturn.png) | ![Uranus](screenshots/uranus.png) |
+
+| Neptune | Mission brief | Dust storm | Assembly finale |
+|---|---|---|---|
+| ![Neptune](screenshots/neptune.png) | ![Mission brief](screenshots/mars_brief.png) | ![Dust storm](screenshots/mars_storm.png) | ![Ending](screenshots/ending.png) |
 
 ## Testing and tools
 
@@ -269,7 +282,7 @@ See [TOOLS.md](TOOLS.md) for details.
 
 ## Team
 
-*   **Sanghaar** — Lead, gameplay & content: levels, entities, data, art primitives, Laila's script.
+*   **Sanghaar** — Lead, gameplay & content: levels, entities, data, art primitives, Laika's script.
 *   **Sulaiman** — Engine & shell: scene manager, GameState, save, UI, audio, map, boot, menu, ending.
 *   **Story and level design:** Victoria and team.
 

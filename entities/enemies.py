@@ -132,12 +132,13 @@ class Turret:
 
 
 class Projectile:
-    """Turret bullet: straight line, dies on leaving bounds or hitting player."""
+    """Enemy bolt: straight line, dies on leaving bounds or hitting the player."""
 
-    def __init__(self, pos, direction, speed=170, radius=4) -> None:
+    def __init__(self, pos, direction, speed=170, radius=4, color=None) -> None:
         self.pos = pygame.Vector2(pos)
         self.vel = pygame.Vector2(direction).normalize() * speed
         self.radius = radius
+        self.color = color or settings.WARN
         self.dead = False
         self.t = 0.0
         self.rect = pygame.Rect(0, 0, radius * 2, radius * 2)
@@ -151,12 +152,188 @@ class Projectile:
             self.dead = True
 
     def draw(self, screen: pygame.Surface, camera: tuple[int, int]) -> None:
-        pygame.draw.circle(
-            screen,
-            settings.WARN,
-            (self.rect.centerx - camera[0], self.rect.centery - camera[1]),
-            self.radius,
-        )
+        cx = self.rect.centerx - camera[0]
+        cy = self.rect.centery - camera[1]
+        trail = (int(cx - self.vel.x * 0.05), int(cy - self.vel.y * 0.05))
+        pygame.draw.line(screen, self.color, trail, (cx, cy), 2)
+        pygame.draw.circle(screen, self.color, (cx, cy), self.radius)
 
     def collides_player(self, player) -> bool:
         return self.rect.colliderect(player.rect)
+
+
+class Walker:
+    """Ground alien: patrols its home range and charges when the player gets close."""
+
+    def __init__(self, spec: dict, cfg: dict, state, color=(96, 200, 120)) -> None:
+        params = cfg.get("params", {})
+        self.speed = state.scale_speed(float(params.get("walker_speed", 70)))
+        self.charge_speed = state.scale_speed(float(params.get("walker_charge", 135)))
+        self.home = pygame.Vector2(spec["x"], spec["y"])
+        self.range = float(spec.get("range", 100))
+        self.pos = pygame.Vector2(self.home)
+        self.facing = 1
+        self.color = color
+        self.hp = 1
+        self.dead = False
+        self.t = 0.0
+        self.charging = False
+        self.rect = pygame.Rect(0, 0, 24, 18)
+        self.rect.center = (round(self.pos.x), round(self.pos.y))
+
+    def update(self, dt: float, player) -> None:
+        if self.dead or player.dead:
+            self.charging = False
+            return
+        self.t += dt
+        near = (
+            abs(player.pos.x - self.pos.x) < 240
+            and abs(player.pos.y - self.pos.y) < 90
+        )
+        if near:
+            direction = 1 if player.pos.x > self.pos.x else -1
+            self.pos.x += direction * self.charge_speed * dt
+            self.facing = direction
+            self.charging = True
+        else:
+            offset = self.pos.x - self.home.x
+            if offset > self.range:
+                self.facing = -1
+            elif offset < -self.range:
+                self.facing = 1
+            self.pos.x += self.facing * self.speed * dt
+            self.charging = False
+        self.rect.center = (round(self.pos.x), round(self.pos.y))
+
+    def draw(self, screen: pygame.Surface, camera: tuple[int, int]) -> None:
+        if self.dead:
+            return
+        sprites.draw_alien(
+            screen,
+            (int(self.rect.centerx - camera[0]), int(self.rect.centery - camera[1])),
+            self.t,
+            color=self.color,
+            radius=11,
+            facing=self.facing,
+            moving=self.charging,
+        )
+
+    def collides_player(self, player) -> bool:
+        return not self.dead and self.rect.colliderect(player.rect)
+
+    def hit(self) -> bool:
+        """One stomp or laser shot kills a walker. Returns True when it dies."""
+        self.hp -= 1
+        if self.hp <= 0:
+            self.dead = True
+            audio.play("boom", 0.7)
+        else:
+            audio.play("hit", 0.5)
+        return self.dead
+
+
+class UFO:
+    """Alien saucer: patrols the sky, dives at the player's altitude and fires plasma."""
+
+    def __init__(self, spec: dict, cfg: dict, state, color=(150, 170, 200)) -> None:
+        params = cfg.get("params", {})
+        self.speed = state.scale_speed(float(params.get("ufo_speed", 60)))
+        self.fire_interval = max(1.0, float(params.get("ufo_fire_interval", 2.2)))
+        self.plasma_speed = state.scale_speed(float(params.get("plasma_speed", 210)))
+        self.home = pygame.Vector2(spec["x"], spec["y"])
+        self.range = float(spec.get("range", 110))
+        self.pos = pygame.Vector2(self.home)
+        self.base_y = float(spec["y"])
+        self.facing = 1
+        self.color = color
+        self.hp = 2
+        self.dead = False
+        self.t = 0.0
+        self.timer = 0.0
+        self.charge = 0.0
+        self.rect = pygame.Rect(0, 0, 34, 16)
+        self.rect.center = (round(self.pos.x), round(self.pos.y))
+
+    def update(self, dt: float, player) -> Projectile | None:
+        if self.dead:
+            return None
+        self.t += dt
+
+        offset = self.pos.x - self.home.x
+        if offset > self.range:
+            self.facing = -1
+        elif offset < -self.range:
+            self.facing = 1
+        self.pos.x += self.facing * self.speed * dt
+        self.pos.y = self.base_y + math.sin(self.t * 2.2) * 12.0
+        self.rect.center = (round(self.pos.x), round(self.pos.y))
+
+        if player.dead:
+            self.charge = 0.0
+            return None
+        distance = math.hypot(player.pos.x - self.pos.x, player.pos.y - self.pos.y)
+        if distance > 460:
+            self.charge = max(0.0, self.charge - dt * 0.8)
+            return None
+
+        self.timer += dt
+        self.charge = min(1.0, self.timer / self.fire_interval)
+        if self.timer >= self.fire_interval:
+            self.timer = 0.0
+            direction = pygame.Vector2(player.pos) - self.pos
+            if direction.length_squared() > 0:
+                audio.play("laser", 0.5)
+                return Projectile(
+                    self.pos + direction.normalize() * 14,
+                    direction,
+                    self.plasma_speed,
+                    radius=4,
+                    color=(255, 120, 90),
+                )
+        return None
+
+    def draw(self, screen: pygame.Surface, camera: tuple[int, int]) -> None:
+        if self.dead:
+            return
+        sprites.draw_ufo(
+            screen,
+            (int(self.rect.centerx - camera[0]), int(self.rect.centery - camera[1])),
+            self.t,
+            color=self.color,
+            radius=15,
+            charging=self.charge,
+        )
+
+    def collides_player(self, player) -> bool:
+        return not self.dead and self.rect.colliderect(player.rect)
+
+    def hit(self) -> bool:
+        """Two laser shots kill a saucer; a stomp counts as two."""
+        self.hp -= 2
+        if self.hp <= 0:
+            self.dead = True
+            audio.play("boom", 0.8)
+        else:
+            audio.play("hit", 0.5)
+        return self.dead
+
+
+class LaserBolt(Projectile):
+    """Player blaster shot: fast, glowing, short-lived."""
+
+    def __init__(self, pos, direction, speed: float = 560) -> None:
+        super().__init__(pos, direction, speed, radius=3, color=settings.ACCENT)
+        self.life = 0.85
+
+    def update(self, dt: float, bounds: pygame.Rect) -> None:
+        super().update(dt, bounds)
+        self.life -= dt
+        if self.life <= 0:
+            self.dead = True
+
+    def draw(self, screen: pygame.Surface, camera: tuple[int, int]) -> None:
+        cx = self.rect.centerx - camera[0]
+        cy = self.rect.centery - camera[1]
+        trail = (int(cx - self.vel.x * 0.045), int(cy - self.vel.y * 0.045))
+        pygame.draw.line(screen, (220, 255, 250), trail, (cx, cy), 2)
+        pygame.draw.circle(screen, self.color, (cx, cy), self.radius + 1)

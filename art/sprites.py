@@ -22,69 +22,254 @@ def draw_astronaut(
     facing: int = 1,
     hurt: float = 0.0,
     scale: float = 1.0,
+    airborne: bool = False,
+    firing: float = 0.0,
 ) -> None:
+    """The player: a detailed explorer suit with animated legs, blaster and jetpack."""
     cx, cy = center
     s = scale
+    f = 1 if facing >= 0 else -1
     bob = math.sin(t * 6.0) * (1.5 if moving else 0.6) * s
+    step = math.sin(t * 11.0) * 3.5 * s if moving else 0.0
 
-    # thruster flame
-    if moving:
-        flicker = 3 + int((math.sin(t * 34.0) + 1) * 3)
-        flame_color = (255, 190, 110) if facing >= 0 else (150, 220, 255)
+    suit = (232, 238, 248)
+    shade = (198, 208, 226)
+    stripe = (240, 130, 60)
+    dark = (46, 58, 84)
+    if hurt > 0:
+        suit = (255, 150, 165)
+        shade = (222, 120, 138)
+
+    # jetpack flame while airborne
+    if airborne:
+        flicker = 4 + int((math.sin(t * 34.0) + 1) * 3)
+        flame = (255, 190, 110)
         _poly(
             surface,
-            flame_color,
+            flame,
             [
-                (cx - 5 * s, cy + 14 * s + bob),
-                (cx + 5 * s, cy + 14 * s + bob),
-                (cx, cy + (18 + flicker) * s + bob),
+                (cx - 9 * s - f * 2 * s, cy + 6 * s + bob),
+                (cx - 3 * s - f * 2 * s, cy + 6 * s + bob),
+                (cx - 6 * s - f * 2 * s, cy + (12 + flicker) * s + bob),
             ],
         )
 
-    body_color = (226, 234, 246)
-    if hurt > 0:
-        body_color = (255, 150, 165)
-
-    # backpack
+    # backpack (behind the body)
     pygame.draw.rect(
         surface,
-        (120, 140, 175),
-        pygame.Rect(int(cx - 13 * s), int(cy - 8 * s + bob), int(26 * s), int(17 * s)),
-        border_radius=max(1, int(4 * s)),
+        (110, 128, 158),
+        pygame.Rect(int(cx - f * 15 * s - 5 * s), int(cy - 8 * s + bob), int(11 * s), int(16 * s)),
+        border_radius=max(1, int(3 * s)),
     )
-    # torso
+    # backpack antenna with a blinking light
+    pygame.draw.line(
+        surface,
+        (150, 165, 190),
+        (cx - f * 10 * s, cy - 8 * s + bob),
+        (cx - f * 12 * s, cy - 18 * s + bob),
+        max(1, int(s)),
+    )
+    blink = int(t * 3.0) % 2 == 0
+    if blink:
+        pygame.draw.circle(surface, settings.ACCENT, (int(cx - f * 12 * s), int(cy - 19 * s + bob)), max(1, int(1.6 * s)))
+
+    # legs (animated walk cycle) and boots
+    for index in (-1, 1):
+        swing = step * index if moving else index * 1.2 * s
+        hip_x = cx + index * 4 * s
+        leg = pygame.Rect(
+            int(hip_x - 3 * s + swing * 0.4),
+            int(cy + 9 * s + bob),
+            int(6 * s),
+            int(8 * s + abs(swing) * 0.2),
+        )
+        pygame.draw.rect(surface, shade, leg, border_radius=max(1, int(2 * s)))
+        boot = pygame.Rect(leg.x - int(1 * s), leg.bottom - int(3 * s), leg.width + int(3 * s), int(3 * s))
+        pygame.draw.rect(surface, dark, boot, border_radius=max(1, int(1 * s)))
+
+    # torso with chest stripe + suit light
+    torso = pygame.Rect(int(cx - 9 * s), int(cy - 7 * s + bob), int(18 * s), int(17 * s))
+    pygame.draw.rect(surface, suit, torso, border_radius=max(2, int(5 * s)))
     pygame.draw.rect(
         surface,
-        body_color,
-        pygame.Rect(int(cx - 9 * s), int(cy - 6 * s + bob), int(18 * s), int(18 * s)),
-        border_radius=max(2, int(6 * s)),
+        stripe,
+        pygame.Rect(torso.x, torso.y + int(7 * s), torso.width, int(3 * s)),
+        border_radius=max(1, int(1 * s)),
     )
-    # legs
+    pygame.draw.circle(surface, settings.ACCENT, (int(cx - f * 4 * s), int(cy - 2 * s + bob)), max(1, int(2 * s)))
+
+    # back arm
     pygame.draw.rect(
-        surface, (198, 210, 228), pygame.Rect(int(cx - 8 * s), int(cy + 11 * s + bob), int(7 * s), int(7 * s))
+        surface,
+        shade,
+        pygame.Rect(int(cx - f * 11 * s - 3 * s), int(cy - 3 * s + bob), int(6 * s), int(11 * s)),
+        border_radius=max(1, int(2 * s)),
     )
+
+    # front arm + blaster
+    arm_y = cy - 1 * s + bob
     pygame.draw.rect(
-        surface, (198, 210, 228), pygame.Rect(int(cx + 1 * s), int(cy + 11 * s + bob), int(7 * s), int(7 * s))
+        surface,
+        suit,
+        pygame.Rect(int(cx + f * 6 * s), int(arm_y), int(10 * s), int(5 * s)),
+        border_radius=max(1, int(2 * s)),
     )
-    # arms
+    gun_x = cx + f * 14 * s
     pygame.draw.rect(
-        surface, (208, 220, 238), pygame.Rect(int(cx - 14 * s), int(cy - 4 * s + bob), int(6 * s), int(12 * s))
+        surface,
+        (70, 84, 110),
+        pygame.Rect(int(gun_x - 3 * s), int(arm_y - 2 * s), int(10 * s), int(5 * s)),
+        border_radius=max(1, int(1 * s)),
     )
-    pygame.draw.rect(
-        surface, (208, 220, 238), pygame.Rect(int(cx + 8 * s), int(cy - 4 * s + bob), int(6 * s), int(12 * s))
-    )
-    # helmet
-    pygame.draw.circle(surface, body_color, (int(cx), int(cy - 12 * s + bob)), int(10 * s))
-    pygame.draw.circle(surface, (34, 52, 78), (int(cx + 2 * s * facing), int(cy - 12 * s + bob)), int(7 * s))
-    pygame.draw.circle(surface, settings.ACCENT, (int(cx + 3 * s * facing), int(cy - 13 * s + bob)), int(3 * s))
+    pygame.draw.circle(surface, settings.ACCENT, (int(gun_x + f * 6 * s), int(arm_y)), max(1, int(1.6 * s)))
+    if firing > 0:
+        flash_len = 8 + 6 * firing
+        pygame.draw.circle(
+            surface,
+            (255, 255, 200),
+            (int(gun_x + f * (8 + flash_len * 0.4) * s), int(arm_y)),
+            max(2, int(3 * s * firing + 2)),
+        )
+
+    # helmet + visor
+    helmet_y = cy - 13 * s + bob
+    pygame.draw.circle(surface, suit, (int(cx), int(helmet_y)), int(10 * s))
+    pygame.draw.circle(surface, (150, 162, 186), (int(cx), int(helmet_y)), int(10 * s), max(1, int(1.4 * s)))
+    visor = pygame.Rect(int(cx - 6 * s + f * 2 * s), int(helmet_y - 5 * s), int(11 * s), int(8 * s))
+    pygame.draw.rect(surface, (24, 34, 56), visor, border_radius=max(1, int(3 * s)))
+    pygame.draw.rect(surface, (64, 140, 190), visor, max(1, int(1 * s)), border_radius=max(1, int(3 * s)))
+    glint_x = visor.x + int(3 * s) + (2 * s if f > 0 else 0)
+    pygame.draw.circle(surface, (140, 220, 255), (int(glint_x), int(helmet_y - 3 * s + bob)), max(1, int(1.5 * s)))
 
     if hurt > 0:
-        flash = pygame.Surface((int(34 * s), int(44 * s)), pygame.SRCALPHA)
+        flash = pygame.Surface((int(40 * s), int(48 * s)), pygame.SRCALPHA)
         flash.fill((255, 80, 110, 60))
-        surface.blit(flash, (int(cx - 17 * s), int(cy - 24 * s)))
+        surface.blit(flash, (int(cx - 20 * s), int(cy - 26 * s)))
 
 
-def draw_laila(
+def draw_alien(
+    surface: pygame.Surface,
+    center: tuple[int, int],
+    t: float = 0.0,
+    *,
+    color: tuple[int, int, int] = (96, 200, 120),
+    radius: int = 12,
+    facing: int = 1,
+    moving: bool = False,
+) -> None:
+    """Ground alien: wobbling blob with legs, spikes and glowing eyes."""
+    cx, cy = center
+    wobble = math.sin(t * 9.0) * (1.0 if moving else 0.4)
+    body_w = radius * 1.7
+    body_h = radius * 1.3 + wobble
+
+    # legs
+    for index in (-1, 0, 1):
+        leg_x = cx + index * radius * 0.75
+        swing = math.sin(t * 12.0 + index * 2.0) * (3 if moving else 1)
+        pygame.draw.line(
+            surface,
+            tuple(max(0, channel - 40) for channel in color),
+            (leg_x, cy + body_h * 0.5),
+            (leg_x + swing, cy + body_h * 0.5 + 5),
+            2,
+        )
+        pygame.draw.circle(surface, tuple(max(0, channel - 60) for channel in color), (int(leg_x + swing), int(cy + body_h * 0.5 + 6)), 2)
+
+    # spikes on the back
+    for index in range(3):
+        spike_x = cx - body_w * 0.4 + index * body_w * 0.4
+        pygame.draw.polygon(
+            surface,
+            tuple(max(0, channel - 30) for channel in color),
+            [
+                (spike_x - 3, cy - body_h * 0.5),
+                (spike_x + 3, cy - body_h * 0.5),
+                (spike_x, cy - body_h * 0.5 - 6),
+            ],
+        )
+
+    # body
+    pygame.draw.ellipse(surface, color, pygame.Rect(int(cx - body_w / 2), int(cy - body_h / 2), int(body_w), int(body_h)))
+    pygame.draw.ellipse(
+        surface,
+        tuple(max(0, channel - 50) for channel in color),
+        pygame.Rect(int(cx - body_w / 2), int(cy - body_h / 2), int(body_w), int(body_h)),
+        2,
+    )
+
+    # eyes facing the player
+    eye_y = cy - body_h * 0.1
+    for eye_index in (-1, 1):
+        eye_x = cx + eye_index * 3 + facing * 2
+        pygame.draw.circle(surface, (255, 230, 120), (int(eye_x), int(eye_y)), 2)
+        pygame.draw.circle(surface, (30, 30, 10), (int(eye_x + facing), int(eye_y)), 1)
+    pygame.draw.line(surface, (20, 30, 16), (cx - 3 + facing, cy + body_h * 0.22), (cx + 3 + facing, cy + body_h * 0.22), 1)
+
+
+def draw_ufo(
+    surface: pygame.Surface,
+    center: tuple[int, int],
+    t: float = 0.0,
+    *,
+    color: tuple[int, int, int] = (150, 170, 200),
+    radius: int = 16,
+    charging: float = 0.0,
+) -> None:
+    """Alien saucer: metal hull, glass dome with a pilot, blinking rim lights."""
+    cx, cy = center
+    tilt = math.sin(t * 2.4) * 0.06
+    hull_w = radius * 2.4
+    hull_h = int(radius * 0.7)
+
+    # under glow
+    glow = pygame.Surface((int(hull_w), int(hull_h * 3)), pygame.SRCALPHA)
+    pygame.draw.ellipse(glow, (*settings.DANGER, 60), (0, 0, int(hull_w), int(hull_h * 1.6)))
+    surface.blit(glow, (int(cx - hull_w / 2), int(cy - hull_h * 0.6)))
+
+    # dome + alien pilot
+    dome_r = int(radius * 0.85)
+    pygame.draw.circle(surface, (120, 200, 210), (cx, cy - hull_h), dome_r)
+    pygame.draw.circle(surface, (170, 230, 235), (cx, cy - hull_h), dome_r, 1)
+    head_r = max(3, dome_r // 2)
+    pygame.draw.circle(surface, (110, 210, 130), (cx, cy - hull_h), head_r)
+    for eye_index in (-1, 1):
+        pygame.draw.ellipse(
+            surface,
+            (12, 16, 20),
+            pygame.Rect(int(cx + eye_index * head_r * 0.5 - 2), int(cy - hull_h - 2), 4, 5),
+        )
+
+    # hull
+    hull_points = [
+        (cx - hull_w / 2, cy + tilt * 10),
+        (cx - hull_w * 0.2, cy - hull_h + 2),
+        (cx + hull_w * 0.2, cy - hull_h + 2),
+        (cx + hull_w / 2, cy + tilt * 10),
+        (cx + hull_w * 0.3, cy + hull_h * 0.5),
+        (cx - hull_w * 0.3, cy + hull_h * 0.5),
+    ]
+    pygame.draw.polygon(surface, color, hull_points)
+    pygame.draw.polygon(surface, tuple(max(0, channel - 60) for channel in color), hull_points, 1)
+
+    # blinking rim lights
+    for index in range(4):
+        light_x = cx - hull_w * 0.32 + index * hull_w * 0.213
+        on = int(t * 5.0 + index) % 2 == 0
+        pygame.draw.circle(
+            surface,
+            settings.ACCENT if on else (40, 60, 80),
+            (int(light_x), int(cy + hull_h * 0.1)),
+            2,
+        )
+
+    # charge glow when about to fire
+    if charging > 0:
+        charge_r = int(3 + 5 * charging)
+        pygame.draw.circle(surface, settings.WARN, (cx, cy + hull_h), charge_r, 1)
+
+
+def draw_laika(
     surface: pygame.Surface,
     center: tuple[int, int],
     t: float = 0.0,
@@ -93,7 +278,7 @@ def draw_laila(
     talking: bool = False,
     alpha: int = 220,
 ) -> None:
-    """Laila: a small holographic companion. Drawn on its own layer for the glow."""
+    """Laika: a small holographic companion. Drawn on its own layer for the glow."""
     s = scale
     bob = math.sin(t * 2.2) * 3 * s
     size = int(96 * s)

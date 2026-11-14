@@ -1,5 +1,5 @@
 {
-  "speaker": "Laila",
+  "speaker": "Laika",
   "lines": [
     {
       "trigger": "start",
@@ -7,7 +7,7 @@
     },
     {
       "trigger": "start",
-      "text": "I am Laila. I run the navigation core, and right now I am the only thing out here keeping you pointed home."
+      "text": "I am Laika. I run the navigation core, and right now I am the only thing out here keeping you pointed home."
     },
     {
       "trigger": "start",

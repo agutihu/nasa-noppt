@@ -24,13 +24,12 @@ from core.game_state import GameState  # noqa: E402
 from core.scene import Game  # noqa: E402
 from scenes.ending import EndingScene  # noqa: E402
 from scenes.map import MapScene  # noqa: E402
-
-from scenes.mars import MarsScene  # noqa: E402
-from scenes.mercury import MercuryScene  # noqa: E402
 from scenes.menu import MenuScene  # noqa: E402
 from scenes.tutorial import TutorialScene  # noqa: E402
-from scenes.venus import VenusScene  # noqa: E402
+from scenes.world_level import make_world_scene  # noqa: E402
 from ui.pause import PauseScene  # noqa: E402
+
+WORLD_PLANETS = ("mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune")
 
 
 def run_scene(game: Game, name: str, frames: int = 30) -> None:
@@ -55,28 +54,20 @@ def main() -> int:
 
     registry = {
         settings.TUTORIAL: TutorialScene,
-        settings.MARS: MarsScene,
-        settings.MERCURY: MercuryScene,
-        settings.VENUS: VenusScene,
         settings.ENDING: EndingScene,
         settings.MENU: MenuScene,
         settings.MAP: MapScene,
         settings.PAUSE: PauseScene,
     }
+    for planet_id in WORLD_PLANETS:
+        registry[planet_id] = make_world_scene(planet_id)
     for name, cls in registry.items():
         game.manager.register(name, cls)
 
     failures = []
+    scene_names = (settings.TUTORIAL, *WORLD_PLANETS, settings.MENU, settings.MAP, settings.PAUSE)
 
-    for name in (
-        settings.TUTORIAL,
-        settings.MARS,
-        settings.MERCURY,
-        settings.VENUS,
-        settings.MENU,
-        settings.MAP,
-        settings.PAUSE,
-    ):
+    for name in scene_names:
         try:
             run_scene(game, name)
             print(f"ok    {name}")

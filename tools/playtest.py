@@ -1,6 +1,7 @@
 """Scripted end-to-end playtest: plays the real game loop headlessly.
 
-Verifies the full loop: tutorial win -> parts -> ending assembly -> stats.
+Verifies the full campaign: tutorial -> mercury -> venus -> mars -> jupiter -> saturn ->
+uranus -> neptune (locked chain, worlds, combat, storm) -> earth assembly -> stats.
 Run: python tools/playtest.py
 """
 
@@ -18,16 +19,16 @@ sys.path.insert(0, str(ROOT))
 
 import pygame  # noqa: E402
 
-from core import audio, settings  # noqa: E402
+from core import audio, levels, settings  # noqa: E402
 from core.game_state import GameState  # noqa: E402
 from core.scene import Game  # noqa: E402
 from scenes.ending import EndingScene  # noqa: E402
 from scenes.map import MapScene  # noqa: E402
-from scenes.mars import MarsScene  # noqa: E402
-from scenes.mercury import MercuryScene  # noqa: E402
 from scenes.tutorial import TutorialScene  # noqa: E402
-from scenes.venus import VenusScene  # noqa: E402
+from scenes.world_level import make_world_scene  # noqa: E402
 from ui.pause import PauseScene  # noqa: E402
+
+WORLD_PLANETS = ("mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune")
 
 
 class FakeKeys:
@@ -76,17 +77,18 @@ def main() -> int:
     state = GameState()
     state.reset()
     game = Game(virtual, window, state)
-    for name, cls in {
+    registry = {
         settings.TUTORIAL: TutorialScene,
-        settings.MARS: MarsScene,
-        settings.MERCURY: MercuryScene,
-        settings.VENUS: VenusScene,
         settings.ENDING: EndingScene,
         settings.MAP: MapScene,
         settings.PAUSE: PauseScene,
-    }.items():
+    }
+    for planet_id in WORLD_PLANETS:
+        registry[planet_id] = make_world_scene(planet_id)
+    for name, cls in registry.items():
         game.manager.register(name, cls)
 
+    planets = levels.planet_index()
     failures: list[str] = []
 
     def check(label: str, condition: bool) -> None:
@@ -123,66 +125,63 @@ def main() -> int:
     check("tutorial: H task completes level", state.tutorial_done)
     check("tutorial: back on map", game.manager.current_name == settings.MAP)
 
-    # --- mars: storm first (it freezes once the level is won) ---------------
-    game.manager.switch(settings.MARS)
+    # --- sequential unlocks: only mercury is open after the tutorial ---------
+    check("chain: mercury unlocked after tutorial", state.is_unlocked(planets["mercury"]))
+    check("chain: venus locked before mercury", not state.is_unlocked(planets["venus"]))
+    check("chain: neptune locked early", not state.is_unlocked(planets["neptune"]))
+    check("chain: finale locked early", not state.is_unlocked(planets["earth"]))
+
+    # --- one full world check on mercury, then scripted wins for the rest ----
+    game.manager.switch(settings.MERCURY, _test=True)
     scene = game.manager.current
-    advance(game, 5)
-    skip_dialogue(game)
-    scene.storm_timer = 24.9
+    check("mercury: world generated", len(scene.platforms) > 6 and len(scene.checkpoints) >= 3)
+    check("mercury: enemies placed", len(scene.walkers) + len(scene.ufos) > 3)
+    check("mercury: hazards placed", len(scene.hazards) > 2)
+    check("mercury: briefing skipped in test mode", scene.phase == "play")
+
+    scene.player.pos.y -= 40  # make sure the player is airborne, then fire
+    advance(game, 3)
+    game.manager.handle_events([pygame.event.Event(pygame.KEYDOWN, key=pygame.K_e)])
+    check("mercury: laser fires", len(scene.lasers) > 0)
+    check("mercury: stopwatch running", scene.stopwatch > 0.0)
+
+    scene._test_complete()
+    check("mercury: part collected", state.has_part("Solar Panel Array"))
+    check("mercury: level marked done", state.is_level_done("mercury"))
+    check("chain: venus unlocked after mercury", state.is_unlocked(planets["venus"]))
+
+    # --- the remaining missions: world boots, completes, unlocks the next ----
+    for planet_id in WORLD_PLANETS[1:]:
+        game.manager.switch(planet_id, _test=True)
+        scene = game.manager.current
+        check(f"{planet_id}: world generated", len(scene.platforms) > 4)
+        advance(game, 5)
+        scene._test_complete()
+        check(f"{planet_id}: part collected", state.is_level_done(planet_id))
+        next_id = WORLD_PLANETS[WORLD_PLANETS.index(planet_id) + 1] if planet_id != "neptune" else None
+        if next_id:
+            check(f"chain: {next_id} unlocked", state.is_unlocked(planets[next_id]))
+
+    # --- mars storm: the world must stay hidden outside the visibility circle -
+    game.manager.switch(settings.MARS, _test=True)
+    scene = game.manager.current
+    scene.storm_timer = scene.storm_interval - 0.1
     advance(game, 40)
     check("mars: dust storm activates", scene.storm_active)
+    check("mars: storm hides the minimap enemies", scene.storm_active and not scene.walkers[0].dead)
 
-    part_pos = scene.params["part_pos"]
-    scene.player.respawn(part_pos[0], part_pos[1])
-    advance(game, 10)
-    skip_dialogue(game)
-    check("mars: part collected", state.has_part("Navigation Module"))
-
-    # --- mercury: heat first, then the part ---------------------------------
-    game.manager.switch(settings.MERCURY)
-    scene = game.manager.current
-    advance(game, 5)
-    skip_dialogue(game)
-    scene.player.pos.update(1600, 360)  # open ground, far right
-    scene.player.rect.center = (1600, 360)
-    scene.sun_x = 1400  # the terminator has passed the player: direct sunlight
-    start_heat = scene.heat.value
-    advance(game, 60)
-    check("mercury: heat rises in sunlight", scene.heat.value > start_heat)
-
-    part_pos = scene.params["part_pos"]
-    scene.player.pos.update(part_pos[0], part_pos[1])
-    scene.player.rect.center = (part_pos[0], part_pos[1])
-    advance(game, 8)
-    skip_dialogue(game)
-    check("mercury: part collected", state.has_part("Solar Panel Array"))
-
-    # --- venus: fragments then exit ----------------------------------------
-    game.manager.switch(settings.VENUS)
-    scene = game.manager.current
-    advance(game, 5)
-    skip_dialogue(game)
-    for fragment in scene.fragments:
-        scene.player.pos.update(fragment.pos)
-        scene.player.rect.center = (round(fragment.pos.x), round(fragment.pos.y))
-        advance(game, 3)
-    check("venus: all fragments collected", scene.collected == scene.frag_needed)
-    scene.player.pos.update(scene.exit_pos)
-    scene.player.rect.center = (round(scene.exit_pos.x), round(scene.exit_pos.y))
-    advance(game, 10)
-    check("venus: escape triggers win", state.has_part("Hull Plating"))
-
-    # --- map shows finale unlocked -----------------------------------------
+    # --- map shows finale unlocked ------------------------------------------
     game.manager.switch(settings.MAP)
     scene = game.manager.current
-    earth = next(p for p in scene.planets if p["id"] == "earth")
+    earth = planets["earth"]
     check("map: finale unlocked with all parts", state.is_unlocked(earth))
-    check("map: 3/3 parts", state.part_count == 3)
+    check("map: 7/7 parts", state.part_count == 7)
 
     # --- ending: assemble and launch ----------------------------------------
     game.manager.switch(settings.ENDING)
     scene = game.manager.current
     check("ending: entered assembly", scene.phase == "assemble")
+    check("ending: seven sockets", len(scene.socket_positions) == 7)
     for index, part in enumerate(scene.required):
         scene._place(part, index)
         skip_dialogue(game, 4)
@@ -190,6 +189,7 @@ def main() -> int:
     scene._launch()
     advance(game, 10)
     check("ending: stats screen shown", scene.phase == "stats")
+    check("ending: best time recorded", bool(state.best_times))
 
     print()
     if failures:

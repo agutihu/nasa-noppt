@@ -23,8 +23,8 @@ Headless tools set `SDL_VIDEODRIVER=dummy` and `SDL_AUDIODRIVER=dummy` internall
 - Delta time everywhere; no `time.sleep`; async-friendly `main()` keeps the pygbag path possible.
 - Art and audio are fully procedural/synthesized; game runs with empty `assets/` and no audio files.
 - Missing data/assets/audio/save → graceful fallback, never crash.
-- Required parts for the ending: `Navigation Module`, `Solar Panel Array`, `Hull Plating`.
-- Pickups are proximity-based (walk into); `E` advances dialogue, not pickup.
+- Required parts for the ending: the seven part names in `data/planets.json` (Solar Panel Array, Hull Plating, Navigation Module, Shield Generator, Fuel Cells, Thermal Regulator, Signal Antenna).
+- Pickups are proximity-based (walk into); `E` fires the blaster in worlds, `E`/`Space` advances dialogue.
 
 ## Docs
 

@@ -18,6 +18,7 @@
       "id": "mercury",
       "name": "Mercury",
       "part": "Solar Panel Array",
+      "part_color": "#f7c948",
       "playable": "mercury",
       "map_position": [
         0.451,
@@ -45,6 +46,7 @@
       "id": "venus",
       "name": "Venus",
       "part": "Hull Plating",
+      "part_color": "#7bdff2",
       "playable": "venus",
       "map_position": [
         0.539,
@@ -63,9 +65,7 @@
         "venus_pressure",
         "venus_temp"
       ],
-      "unlock": [
-        "tutorial_done"
-      ],
+      "unlock": [],
       "source": "NASA Planetary Fact Sheet"
     },
     {
@@ -98,6 +98,7 @@
       "id": "mars",
       "name": "Mars",
       "part": "Navigation Module",
+      "part_color": "#8fd3ff",
       "playable": "mars",
       "map_position": [
         0.413,
@@ -116,16 +117,15 @@
         "mars_gravity",
         "mars_dust_storms"
       ],
-      "unlock": [
-        "tutorial_done"
-      ],
+      "unlock": [],
       "source": "NASA Planetary Fact Sheet"
     },
     {
       "id": "jupiter",
       "name": "Jupiter",
       "part": "Shield Generator",
-      "playable": null,
+      "part_color": "#f4a261",
+      "playable": "jupiter",
       "map_position": [
         0.397,
         0.783
@@ -137,7 +137,7 @@
       "bands": 5,
       "craters": 0,
       "ring": false,
-      "tagline": "Radiation belt. Not cleared for landing.",
+      "tagline": "Storm platforms above the Great Red Spot.",
       "fact": "The Great Red Spot is a storm wider than Earth, inside radiation belts that would fry an unshielded spacecraft.",
       "facts": [
         "jupiter_grs",
@@ -150,7 +150,8 @@
       "id": "saturn",
       "name": "Saturn",
       "part": "Fuel Cells",
-      "playable": null,
+      "part_color": "#ffe9a8",
+      "playable": "saturn",
       "map_position": [
         0.666,
         0.768
@@ -162,7 +163,7 @@
       "bands": 3,
       "craters": 0,
       "ring": true,
-      "tagline": "Ring debris. Beautiful and lethal.",
+      "tagline": "Ice platforms inside the rings.",
       "fact": "The rings are mostly water ice, from tiny grains to house-sized chunks, and are extremely thin compared to their width.",
       "facts": [
         "saturn_rings"
@@ -173,8 +174,9 @@
     {
       "id": "uranus",
       "name": "Uranus",
-      "part": null,
-      "playable": null,
+      "part": "Thermal Regulator",
+      "part_color": "#b8f2e6",
+      "playable": "uranus",
       "map_position": [
         0.564,
         0.097
@@ -186,7 +188,7 @@
       "bands": 2,
       "craters": 0,
       "ring": true,
-      "tagline": "Tipped on its side.",
+      "tagline": "A tilted, slippery ice world.",
       "fact": "Uranus rotates on its side, so each pole gets roughly 42 years of sunlight, then 42 years of darkness.",
       "facts": [
         "uranus_tilt"
@@ -197,8 +199,9 @@
     {
       "id": "neptune",
       "name": "Neptune",
-      "part": null,
-      "playable": null,
+      "part": "Signal Antenna",
+      "part_color": "#a0c4ff",
+      "playable": "neptune",
       "map_position": [
         0.247,
         0.356
@@ -210,7 +213,7 @@
       "bands": 2,
       "craters": 0,
       "ring": false,
-      "tagline": "The fastest winds we know of.",
+      "tagline": "Supersonic winds at the edge of the system.",
       "fact": "Neptune's winds are the fastest in the solar system, reaching more than 2,000 km/h.",
       "facts": [
         "neptune_winds"

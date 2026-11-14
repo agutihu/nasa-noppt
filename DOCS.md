@@ -10,7 +10,7 @@ mission built for the NASA Space Apps Challenge 2026.
 | [README.md](README.md) | Main | Project overview for judges and players — pitch, features, tech stack, structure, levels, controls, run steps. |
 | [design.md](design.md) | Design | Game design document — premise, story, design pillars, level design, mechanics, art/audio, win-lose structure. |
 | [technical.md](technical.md) | Technical | Technical reference — architecture, scene/game-state design, data flow, module guide, engineering rules, save system, adding a level. |
-| [playguide.md](playguide.md) | Player | Player-facing guide — install, run, controls, level objectives, Laila/hints, difficulty, troubleshooting. |
+| [playguide.md](playguide.md) | Player | Player-facing guide — install, run, controls, level objectives, Laika/hints, difficulty, troubleshooting. |
 | [TOOLS.md](TOOLS.md) | Tools | Developer/QA tools — NASA APOD cache, headless smoke test, scripted playtest, map panel shots. |
 | [SCIENCE.md](SCIENCE.md) | Science | NASA science appendix — planetary facts, sources, APOD imagery, verification. |
 | [DATA.md](DATA.md) | Data | Data & content format reference — planets, levels, dialogue, APOD JSON schemas, adding content. |

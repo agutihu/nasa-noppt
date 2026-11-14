@@ -1,12 +1,12 @@
 {
-  "speaker": "Laila",
+  "speaker": "Laika",
   "lines": [
     { "trigger": "start", "text": "Mercury. Dayside hits about 430 degrees Celsius; nightside falls to minus 180. Almost no atmosphere to hold the heat." },
-    { "trigger": "start", "text": "The terminator is sweeping across the surface. Stay in the crater shadows, and keep ahead of the sunlight." },
-    { "trigger": "heat", "text": "Your heat meter is climbing. Get into a shadow crater before you cook." },
-    { "trigger": "win", "text": "Solar Panel Array recovered. Two down, one to go." },
-    { "trigger": "hint", "text": "The shadows are your only safe places. The sun waits for no one." },
-    { "trigger": "hint", "text": "Move steadily - panic burns fuel and time." },
-    { "trigger": "idle", "text": "That glowing rectangle ahead is the outpost. The panel is inside." }
+    { "trigger": "start", "text": "Heat vents and falling rocks ahead. Tap E to fire the blaster, and jump on anything that crawls too close." },
+    { "trigger": "part", "text": "Solar Panel Array secured. The return pod is primed - get to the ship." },
+    { "trigger": "win", "text": "Panel stowed. Mercury's solar output is unreal - this alone could run our whole ship." },
+    { "trigger": "hint", "text": "Heat vents erupt in a rhythm. Watch the pulse, then run through." },
+    { "trigger": "hint", "text": "Meteors fall where the sky flashes. Keep moving under open rock." },
+    { "trigger": "death_3", "text": "Stomp or shoot the crawlers, and never stand in a vent's shadow." }
   ]
 }

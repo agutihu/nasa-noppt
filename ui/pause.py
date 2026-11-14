@@ -96,7 +96,7 @@ class PauseScene(Scene):
         text.draw(screen, "PAUSED", (PANEL.centerx, PANEL.y + 48), 26, settings.ACCENT, display=True, center=True)
         text.draw(
             screen,
-            "Laila is holding the map steady.",
+            "Laika is holding the map steady.",
             (PANEL.centerx, PANEL.y + 78),
             19,
             settings.DIM,

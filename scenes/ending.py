@@ -36,15 +36,19 @@ class EndingScene(Scene):
         self.index = levels.planet_index()
         self.required = self.state.required_parts()
         self.ship_center = (430, 330)
+        # sockets: one row under the ship, sized for however many parts the run has
+        socket_count = len(self.required)
         self.socket_positions = [
-            (self.ship_center[0] - 110, self.ship_center[1] + 150),
-            (self.ship_center[0] + 6, self.ship_center[1] + 150),
-            (self.ship_center[0] + 122, self.ship_center[1] + 150),
+            (self.ship_center[0] + (slot - (socket_count - 1) / 2) * 80, 480)
+            for slot in range(socket_count)
         ]
+        # cargo tray: two columns, kept above the dialogue box
         self.tray_positions = [
-            (settings.WIDTH - 250, 200),
-            (settings.WIDTH - 250, 300),
-            (settings.WIDTH - 250, 400),
+            (
+                940 + (index // 4) * 140,
+                168 + (index % 4) * 92,
+            )
+            for index in range(socket_count)
         ]
         self.placed: dict[str, int] = {}
         self.selected: str | None = None
@@ -58,11 +62,13 @@ class EndingScene(Scene):
         self._intro()
 
     def _intro(self) -> None:
-        lines = ["All three parts recovered. Drag each one into its socket, then we go home."]
+        lines = [
+            f"All {len(self.required)} parts recovered. Drag each one into its socket, then we go home."
+        ]
         self.dlg.queue(lines, on_done=None)
 
     def _build_stats_buttons(self) -> None:
-        y = 470
+        y = 640
         self.stats_buttons = [
             Button((settings.WIDTH // 2 - 220, y, 200, 52), "Fly again", self._play_again),
             Button((settings.WIDTH // 2 + 20, y, 200, 52), "Back to menu", self._menu, style="ghost"),
@@ -188,7 +194,7 @@ class EndingScene(Scene):
                     pygame.draw.circle(screen, settings.ACCENT, socket_pos, int(30 + 6 * pulse), 1)
 
         # tray
-        text.draw(screen, "CARGO", (settings.WIDTH - 250, 148), 16, settings.ACCENT, display=True, center=True)
+        text.draw(screen, "CARGO", (settings.WIDTH - 250, 112), 16, settings.ACCENT, display=True, center=True)
         for part, pos in zip(self.required, self.tray_positions):
             if part in self.placed:
                 continue
@@ -220,7 +226,7 @@ class EndingScene(Scene):
         text.draw(screen, "WELCOME HOME", (settings.WIDTH // 2, 150), 40, settings.ACCENT, display=True, center=True)
         text.draw(
             screen,
-            "The ship is whole again. Laila says hello to the ground crew.",
+            "The ship is whole again. Laika says hello to the ground crew.",
             (settings.WIDTH // 2, 212),
             24,
             settings.INK,
@@ -245,11 +251,30 @@ class EndingScene(Scene):
             text.draw(
                 screen,
                 "Facts: " + ", ".join(self.state.facts),
-                (settings.WIDTH // 2, 448),
+                (settings.WIDTH // 2, 505),
                 17,
                 settings.FAINT,
                 center=True,
                 max_width=760,
+                shadow=False,
+            )
+
+        if self.state.best_times:
+            bests = "  ".join(
+                f"{levels.planet_index().get(level_id, {}).get('name', level_id)} {_fmt_time(time)}"
+                for level_id, time in sorted(
+                    self.state.best_times.items(),
+                    key=lambda item: self.state.levels_done.index(item[0]),
+                )
+            )
+            text.draw(
+                screen,
+                "Best times: " + bests,
+                (settings.WIDTH // 2, 470),
+                18,
+                settings.DIM,
+                center=True,
+                max_width=980,
                 shadow=False,
             )
 

@@ -4,8 +4,8 @@ A guide for playing HOMEBOUND.
 
 ## Welcome
 
-You are the pilot. The ship is damaged. Laila, the navigation core, is guiding you home. Three
-critical parts are scattered across the solar system — recover them and the ship can be rebuilt.
+You are the pilot. The ship is damaged. Laika, the navigation core, is guiding you home. Seven
+critical parts are scattered across seven worlds — recover them all and the ship can be rebuilt.
 
 Every level is built on a real NASA planetary fact. The fact is the mechanic.
 
@@ -43,10 +43,11 @@ python tools/fetch_apod.py
 | Action | Key |
 |---|---|
 | Move | WASD / arrow keys |
-| Jump (Mars platformer) | Space (hold for higher) |
+| Jump | Space (hold for higher) |
+| Fire blaster | E |
 | Pick up / interact | Walk into the item (proximity) |
-| Laila hint | H |
-| Advance dialogue | Space / Enter / click / E |
+| Laika hint | H |
+| Advance dialogue | Space / Enter / click |
 | Pause | Esc |
 | Menu navigation | Up/Down + Enter, or mouse |
 
@@ -58,34 +59,41 @@ python tools/fetch_apod.py
 Boot (APOD splash) → Menu → Solar map → Level → Stats → Menu
 ```
 
-The solar map is the hub. Playable planets unlock after the tutorial. The Earth finale unlocks
-when all required parts are collected.
+The solar map is the hub. Missions unlock one after another — win a world and the next
+padlock opens. The Earth finale unlocks when all seven parts are collected.
 
 ### Level Objectives
 
 | # | Level | Objective |
 |---|---|---|
-| 0 | Earth orbit | Learn movement, interaction, and Laila's hint. Meet Laila. Tasks: fly to beacon → collect bracket crate → press H. |
-| 1 | Mars | Reach the lander wreck and recover the Navigation Module. Low gravity + dust storm. |
-| 2 | Mercury | Cross to the outpost and take the Solar Panel Array. Outrun the sun line, hide in shadows, manage heat. |
-| 3 | Venus | Collect fragments and escape within the time limit. Manage pressure, use canisters, avoid acid. |
-| 6 | Earth | Assemble the ship with recovered parts; land; view stats. |
+| 0 | Earth orbit | Learn movement, interaction, and Laika's hint. Meet Laika. Tasks: fly to beacon → collect bracket crate → press H. |
+| 1 | Mercury | Cross the regolith and recover the Solar Panel Array. The sun line sweeps the surface — stay in shadow. |
+| 2 | Venus | Fight through acid rain and geysers to recover the Hull Plating. |
+| 3 | Mars | Reach the lander wreck and recover the Navigation Module. Low gravity + dust storms that drop visibility. |
+| 4 | Jupiter | Ride the storm platforms above the cloud decks and recover the Shield Generator. |
+| 5 | Saturn | Cross the floating moonlets under ring-debris showers and recover the Fuel Cells. |
+| 6 | Uranus | Navigate the tilted haze and sideways rain to recover the Thermal Regulator. |
+| 7 | Neptune | Push against supersonic winds and recover the Signal Antenna. |
+| 8 | Earth | Assemble the ship with all seven parts; launch; view stats. |
 
-Jupiter, Saturn, Uranus, and Neptune appear as read-only fact cards.
+Every world has a mission briefing card before launch, a circular minimap in the top-right
+corner, a stopwatch (no time limit — it only records how long you took), mid-level
+checkpoints, and a labeled part on a pedestal. Ground aliens charge you, patrol saucers fire
+plasma; press E to fire your blaster, or jump on a walker to crush it.
 
-## Laila and Hints
+## Laika and Hints
 
 - Dialogue advances with Space / Enter / click, or by clicking.
-- Laila types out lines at a steady pace.
-- Press `H` at any time for a hint from Laila.
+- Laika types out lines at a steady pace.
+- Press `H` at any time for a hint from Laika.
 - Idle hints trigger after a delay; death-based hints trigger after repeated failures.
 - Hints are readable at 1280 × 720.
 
 ## Difficulty
 
-- **Easy** — 5 hearts, slower hazards, +25% time, frequent hints.
-- **Normal** — 3 hearts, standard hazards, standard time, standard hints.
-- **Hard** — 2 hearts, faster hazards, -15% time, hints on request only.
+- **Easy** — 5 hearts, slower enemies and hazards, gentler storm timing, frequent hints.
+- **Normal** — 3 hearts, standard enemies, hazards, and storm timing.
+- **Hard** — 2 hearts, faster enemies and hazards, tighter storm timing, hints on request only.
 
 Difficulty applies to the next mission launched and persists.
 

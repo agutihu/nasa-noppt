@@ -18,6 +18,7 @@ class HUD:
         self.objective: str = self.cfg.get("objective", "")
         self.hint_prompt = False
         self.t = 0.0
+        self.target: tuple[str, tuple[int, int, int]] | None = None
         self._planet_colors: dict[str, tuple[int, int, int]] = {}
         for planet in levels.load_planets()["planets"]:
             part = planet.get("part")
@@ -34,6 +35,10 @@ class HUD:
 
     def set_objective(self, value: str) -> None:
         self.objective = value
+
+    def set_target(self, name: str, color: tuple[int, int, int]) -> None:
+        """Show the labeled part this level is about, right in the top bar."""
+        self.target = (name, color)
 
     def update(self, dt: float) -> None:
         self.t += dt
@@ -77,6 +82,26 @@ class HUD:
                 settings.DIM,
                 shadow=False,
             )
+            x += 40
+
+        # labeled mission target part
+        if self.target:
+            name, part_color = self.target
+            owned = self.state.has_part(name)
+            chip_w = text.measure(name, 15)[0] + 46
+            rect = pygame.Rect(x, 12, chip_w, 30)
+            pygame.draw.rect(surface, (8, 14, 26), rect, border_radius=15)
+            pygame.draw.rect(surface, settings.GREEN if owned else part_color, rect, 1, border_radius=15)
+            sprites.draw_part(surface, (rect.x + 16, rect.centery), 8, part_color, self.t, glow=False)
+            text.draw(
+                surface,
+                name,
+                (rect.x + 30, rect.centery),
+                15,
+                settings.DIM if owned else settings.INK,
+                middle=True,
+                shadow=False,
+            )
 
         # timer
         if self.timer is not None:
@@ -112,7 +137,7 @@ class HUD:
             )
 
         if self.hint_prompt:
-            label = "H  Laila hint"
+            label = "H  Laika hint"
             width = text.measure(label, 18)[0] + 24
             rect = pygame.Rect(settings.WIDTH - width - 22, settings.HEIGHT - 44, width, 26)
             pygame.draw.rect(surface, (8, 14, 26), rect, border_radius=13)

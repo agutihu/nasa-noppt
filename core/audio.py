@@ -31,6 +31,8 @@ _RECIPES: dict[str, tuple[float, float, int, float, str]] = {
     "win": (520, 1040, 420, 0.35, "sine"),
     "lose": (300, 120, 420, 0.35, "square"),
     "back": (700, 380, 90, 0.25, "sine"),
+    "laser": (1400, 320, 120, 0.22, "square"),
+    "boom": (160, 40, 320, 0.45, "square"),
 }
 
 

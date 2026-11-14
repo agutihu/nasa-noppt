@@ -30,6 +30,8 @@ class GameState:
     volume: float = 0.8
     muted: bool = False
     text_scale: float = 1.0
+    levels_done: list[str] = field(default_factory=list)
+    best_times: dict[str, float] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.difficulty not in MULTIPLIERS:
@@ -102,12 +104,33 @@ class GameState:
         return self.text_scale
 
     # --- progress -----------------------------------------------------------
+    def mark_level_done(self, level_id: str, time_seconds: float | None = None) -> bool:
+        """Record a mission win; keeps the best clear time per level."""
+        if level_id not in self.levels_done:
+            self.levels_done.append(level_id)
+        if time_seconds is not None:
+            best = self.best_times.get(level_id)
+            if best is None or float(time_seconds) < best:
+                self.best_times[level_id] = round(float(time_seconds), 2)
+        self.save()
+        return True
+
+    def is_level_done(self, level_id: str) -> bool:
+        return level_id in self.levels_done
+
+    def best_time(self, level_id: str) -> float | None:
+        return self.best_times.get(level_id)
+
     def is_unlocked(self, planet: dict) -> bool:
-        for rule in planet.get("unlock", []) or []:
-            if rule == "tutorial_done" and not self.tutorial_done:
-                return False
-            if rule == "all_parts" and not self.all_parts():
-                return False
+        rules = planet.get("unlock", []) or []
+        if "tutorial_done" in rules and not self.tutorial_done:
+            return False
+        if "all_parts" in rules and not self.all_parts():
+            return False
+        # sequential campaign: each mission opens after the previous one is won
+        previous = levels.previous_mission(planet["id"])
+        if previous is not None and not self.is_level_done(previous):
+            return False
         return True
 
     def reset(self) -> None:
@@ -117,6 +140,8 @@ class GameState:
         self.current_level = None
         self.elapsed = 0.0
         self.tutorial_done = False
+        self.levels_done.clear()
+        self.best_times.clear()
         # text_scale/volume/muted survive a reset on purpose (player preferences)
         save.clear()
 
@@ -134,6 +159,8 @@ class GameState:
             "volume": round(self.volume, 2),
             "muted": self.muted,
             "text_scale": round(self.text_scale, 2),
+            "levels_done": list(self.levels_done),
+            "best_times": {key: round(value, 2) for key, value in self.best_times.items()},
         }
 
     @classmethod
@@ -151,6 +178,11 @@ class GameState:
             tutorial_done=bool(data.get("tutorial_done", False)),
             volume=float(data.get("volume", 0.8) or 0.8),
             muted=bool(data.get("muted", False)),
+            levels_done=_list(data.get("levels_done")),
+            best_times={
+                str(key): float(value)
+                for key, value in (data.get("best_times") or {}).items()
+            },
         )
 
     def save(self) -> bool:
@@ -171,6 +203,8 @@ class GameState:
         self.volume = restored.volume
         self.muted = restored.muted
         self.text_scale = restored.text_scale
+        self.levels_done = restored.levels_done
+        self.best_times = restored.best_times
         return True
 
     # --- derived text -------------------------------------------------------

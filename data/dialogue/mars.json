@@ -1,13 +1,13 @@
 {
-  "speaker": "Laila",
+  "speaker": "Laika",
   "lines": [
     { "trigger": "start", "text": "You are on Mars. Gravity here is 3.71 metres per second squared - about 38 percent of Earth. Hold jump longer to go higher." },
+    { "trigger": "start", "text": "Dust devils and alien patrols ahead. The low gravity makes leaps float - use it." },
     { "trigger": "storm", "text": "Dust storm rolling in. Visibility is dropping. Keep moving toward the light." },
-    { "trigger": "death_3", "text": "Release jump early for short hops; hold it to clear wide gaps." },
-    { "trigger": "win", "text": "Navigation Module recovered. Now we can find our way home." },
-    { "trigger": "win", "text": "That's one part. Mercury and Venus are waiting." },
+    { "trigger": "part", "text": "Navigation Module recovered. Now we can find our way home." },
+    { "trigger": "win", "text": "Module stowed. That is one third of the flight computer - keep it safe." },
     { "trigger": "hint", "text": "Long jumps need speed - run before you leap." },
     { "trigger": "hint", "text": "The storm passes quickly. Find cover or keep moving toward the beacon." },
-    { "trigger": "idle", "text": "The lander wreck is ahead. You can make this jump." }
+    { "trigger": "death_3", "text": "Release jump early for short hops; hold it to clear wide gaps." }
   ]
 }

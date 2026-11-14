@@ -1,0 +1,35 @@
+# HOMEBOUND — Documentation Index
+
+This directory contains the complete documentation suite for HOMEBOUND, a solar system repair
+mission built for the NASA Space Apps Challenge 2026.
+
+## Documents
+
+| Document | Type | Purpose |
+|---|---|---|
+| [README.md](README.md) | Main | Project overview for judges and players — pitch, features, tech stack, structure, levels, controls, run steps. |
+| [design.md](design.md) | Design | Game design document — premise, story, design pillars, level design, mechanics, art/audio, win-lose structure. |
+| [technical.md](technical.md) | Technical | Technical reference — architecture, scene/game-state design, data flow, module guide, engineering rules, save system, adding a level. |
+| [playguide.md](playguide.md) | Player | Player-facing guide — install, run, controls, level objectives, Laila/hints, difficulty, troubleshooting. |
+| [TOOLS.md](TOOLS.md) | Tools | Developer/QA tools — NASA APOD cache, headless smoke test, scripted playtest, map panel shots. |
+| [SCIENCE.md](SCIENCE.md) | Science | NASA science appendix — planetary facts, sources, APOD imagery, verification. |
+| [DATA.md](DATA.md) | Data | Data & content format reference — planets, levels, dialogue, APOD JSON schemas, adding content. |
+
+## Suggested reading order
+
+1. [README.md](README.md) — start here for the full picture.
+2. [design.md](design.md) — understand the design intent.
+3. [technical.md](technical.md) — understand the engineering.
+4. [playguide.md](playguide.md) — play the game.
+5. [SCIENCE.md](SCIENCE.md) and [DATA.md](DATA.md) — deep dives on the content and facts.
+
+## Keeping docs in sync
+
+When gameplay or architecture changes, update the relevant document:
+
+- Gameplay / levels / story → `DESIGN.md`, `PLAYGUIDE.md`, `README.md`.
+- Code / architecture / modules → `TECHNICAL.md`.
+- Tests / QA utilities → `TOOLS.md`.
+- NASA facts / science → `SCIENCE.md`.
+- Content / JSON schemas → `DATA.md`.
+- Everything user-facing → `README.md`.

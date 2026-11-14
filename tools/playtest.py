@@ -145,6 +145,15 @@ def main() -> int:
     check("mercury: laser fires", len(scene.lasers) > 0)
     check("mercury: stopwatch running", scene.stopwatch > 0.0)
 
+    for key, label in ((pygame.K_UP, "UP arrow"), (pygame.K_w, "W")):
+        scene.player.vel.y = 0.0  # grounded on the pad, then try each jump key
+        scene.player.on_ground = True
+        scene.player.coyote = 0.0
+        game.manager.handle_events([pygame.event.Event(pygame.KEYDOWN, key=key)])
+        check(f"mercury: {label} jumps", scene.player.vel.y < -300)
+        scene.player.vel.y = 0.0
+        scene.player.on_ground = True
+
     scene._test_complete()
     check("mercury: part collected", state.has_part("Solar Panel Array"))
     check("mercury: level marked done", state.is_level_done("mercury"))

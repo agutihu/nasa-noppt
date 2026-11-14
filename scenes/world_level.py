@@ -217,7 +217,7 @@ class WorldLevelBase(Scene):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.manager.push(settings.PAUSE, parent=self)
-                elif event.key == pygame.K_SPACE:
+                elif event.key in (pygame.K_SPACE, pygame.K_UP, pygame.K_w):
                     self.player.jump()
                 elif event.key == pygame.K_e:
                     if self.player.try_fire():
@@ -745,7 +745,7 @@ class WorldLevelBase(Scene):
         pygame.draw.line(screen, settings.PANEL_EDGE, (x, y - 12), (card.right - 40, y - 12), 1)
         text.draw(
             screen,
-            "WASD / Arrows move   SPACE jump   E fire   H hint",
+            "WASD / Arrows move   SPACE / UP / W jump   E fire   H hint",
             (x, y),
             16,
             settings.FAINT,

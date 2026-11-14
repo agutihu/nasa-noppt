@@ -219,7 +219,7 @@ Boot (APOD splash, cached)
 | Action | Key |
 |---|---|
 | Move | WASD / arrow keys |
-| Jump | Space (hold for higher) |
+| Jump | Space / Up / W (hold for higher) |
 | Fire blaster | E |
 | Pick up / interact | Walk into the item (proximity) |
 | Laika hint | H |

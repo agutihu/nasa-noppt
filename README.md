@@ -128,6 +128,16 @@ HOMEBOUND/
 │       ├── PressStart2P-Regular.ttf
 │       └── VT323-Regular.ttf
 │
+├── screenshots/                # Gameplay captures for the README
+│   ├── boot.png
+│   ├── menu.png
+│   ├── map.png
+│   ├── tutorial.png
+│   ├── mars.png
+│   ├── mercury.png
+│   ├── venus.png
+│   └── ending.png
+│
 └── tools/                      # Dev / QA tools
     ├── fetch_apod.py           # Caches NASA APOD once; committed result keeps game offline
     ├── playtest.py             # Scripted end-to-end playtest of the full loop
@@ -196,6 +206,20 @@ Optional boot-screen cache refresh:
 ```bash
 python tools/fetch_apod.py
 ```
+
+## Screenshots
+
+### Boot & menu
+
+| Boot | Menu |
+|---|---|
+| ![Boot screen](screenshots/boot.png) | ![Menu](screenshots/menu.png) |
+
+### Solar system
+
+| Map | Tutorial | Mars | Mercury | Venus | Ending |
+|---|---|---|---|---|---|
+| ![Solar map](screenshots/map.png) | ![Tutorial](screenshots/tutorial.png) | ![Mars](screenshots/mars.png) | ![Mercury](screenshots/mercury.png) | ![Venus](screenshots/venus.png) | ![Ending](screenshots/ending.png) |
 
 ## Testing and tools
 

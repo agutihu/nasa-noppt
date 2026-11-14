@@ -6,6 +6,8 @@ Scenes swap through ``SceneManager``; nothing blocks the loop (no sleeps, no net
 from __future__ import annotations
 
 import asyncio
+import ctypes
+import sys
 
 import pygame
 
@@ -23,7 +25,21 @@ from scenes.ending import EndingScene
 from ui.pause import PauseScene
 
 
+def _enable_dpi_awareness() -> None:
+    """Opt out of Windows display scaling so text renders 1:1 and stays crisp."""
+    if sys.platform != "win32":
+        return
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)  # per-monitor DPI aware
+    except Exception:
+        try:
+            ctypes.windll.user32.SetProcessDPIAware()
+        except Exception:
+            pass
+
+
 async def main() -> int:
+    _enable_dpi_awareness()
     pygame.init()
     audio.init()
 
@@ -64,17 +80,20 @@ async def main() -> int:
         virtual.fill(settings.SPACE)
         game.manager.draw()
 
-        scale = min(
-            window.get_width() / settings.WIDTH,
-            window.get_height() / settings.HEIGHT,
-        )
-        scaled = pygame.transform.smoothscale(
-            virtual,
-            (int(settings.WIDTH * scale), int(settings.HEIGHT * scale)),
-        )
-        rect = scaled.get_rect(center=(window.get_width() // 2, window.get_height() // 2))
-        window.fill(settings.SPACE_DEEP)
-        window.blit(scaled, rect)
+        win_w, win_h = window.get_size()
+        scale = min(win_w / settings.WIDTH, win_h / settings.HEIGHT)
+        if abs(scale - 1.0) < 0.002:
+            # exact fit: blit 1:1, no resampling — keeps text pixel-crisp
+            window.fill(settings.SPACE_DEEP)
+            window.blit(virtual, (0, 0))
+        else:
+            scaled = pygame.transform.smoothscale(
+                virtual,
+                (int(settings.WIDTH * scale), int(settings.HEIGHT * scale)),
+            )
+            rect = scaled.get_rect(center=(win_w // 2, win_h // 2))
+            window.fill(settings.SPACE_DEEP)
+            window.blit(scaled, rect)
         pygame.display.flip()
 
         await asyncio.sleep(0)

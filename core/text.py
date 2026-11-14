@@ -90,17 +90,17 @@ def draw(
 
     bounds = pygame.Rect(x, y, 0, total_h)
     for index, line in enumerate(lines):
-        rendered = fnt.render(line, True, color)
+        rendered = fnt.render(line, not display, color)
         if alpha < 255:
             rendered = rendered.copy()
             rendered.set_alpha(alpha)
         line_pos = (x, y + index * line_h)
         if shadow:
-            shadow_img = fnt.render(line, True, (0, 0, 0))
+            shadow_img = fnt.render(line, not display, (0, 0, 0))
             if alpha < 255:
                 shadow_img = shadow_img.copy()
-                shadow_img.set_alpha(min(alpha, 120))
-            surface.blit(shadow_img, (line_pos[0] + 2, line_pos[1] + 2))
+                shadow_img.set_alpha(min(alpha, 100))
+            surface.blit(shadow_img, (line_pos[0] + 1, line_pos[1] + 1))
         surface.blit(rendered, line_pos)
         bounds.width = max(bounds.width, rendered.get_width())
 

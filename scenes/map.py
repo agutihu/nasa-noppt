@@ -6,8 +6,10 @@ import math
 
 import pygame
 
-from art import backgrounds, planets, sprites
+from art import backgrounds, planets
 from core import audio, color as core_color, levels, settings, text
+from core.scene import Scene
+from ui.button import Button
 
 hex_to_rgb = core_color.hex_to_rgb
 
@@ -21,14 +23,7 @@ def draw_ring(
     t: float,
 ) -> None:
     pulse = 0.35 + 0.35 * abs(math.sin(t * 2.0))
-    ring_r = radius * pulse
-    pygame.draw.circle(screen, color, (cx, cy), int(ring_r), 2)
-
-from core import audio, color as core_color, levels, settings, text
-from core.scene import Scene
-from ui.button import Button
-
-hex_to_rgb = core_color.hex_to_rgb
+    pygame.draw.circle(screen, color, (cx, cy), int(radius * pulse), 2)
 
 
 class MapScene(Scene):
@@ -46,9 +41,12 @@ class MapScene(Scene):
         self.mouse = (settings.WIDTH // 2, settings.HEIGHT // 2)
         self._resolve_positions()
         self.panel_buttons: list[Button] = []
-        self.detail = None
+        self.menu_button = Button(
+            (settings.WIDTH - 300, 16, 284, 44), "Back to menu", self._back_to_menu
+        )
         self._build_panel()
 
+    # --- setup --------------------------------------------------------------
     def _resolve_positions(self) -> None:
         for planet in self.planets:
             p = planet["map_position"]
@@ -56,6 +54,9 @@ class MapScene(Scene):
 
     def _seed_for(self, planet) -> int:
         return sum(ord(ch) for ch in planet["id"]) * 7 + 1
+
+    def _back_to_menu(self) -> None:
+        self.manager.switch(settings.MENU)
 
     # --- selection ----------------------------------------------------------
     def _find_at(self, pos: tuple[int, int]):
@@ -77,150 +78,41 @@ class MapScene(Scene):
             self._build_panel()
             audio.play("back")
 
+    # --- panel layout -------------------------------------------------------
     def _panel_rect(self) -> pygame.Rect:
-        return pygame.Rect(884, 120, 372, 552)
+        return pygame.Rect(884, 112, 372, 564)
 
     def _build_panel(self) -> None:
-        self.detail = self.selected
+        """Buttons only. All text is drawn every frame in _draw_panel_content,
+        so nothing is painted at build time and nothing overflows the box."""
         self.panel_buttons = []
+        planet = self.selected
+        if planet is None:
+            return
+
         panel = self._panel_rect()
         x = panel.x + 34
         width = panel.width - 68
-        base_y = panel.bottom - 76
+        y = panel.bottom - 70
 
-        if self.selected is None:
-            return
+        playable = planet.get("playable")
+        part = planet.get("part")
 
-        name = self.selected["name"]
-        part = self.selected.get("part")
-        playable = self.selected.get("playable")
-        unlock = self.selected.get("unlock") or []
-
-        if playable == "ending":
-            title = f"{name} - Finale"
-        elif playable:
-            title = f"{name} Mission"
-        else:
-            title = f"{name} - Archive"
-
-        y = panel.y + 300
-        text.draw(
-            self.screen,
-            title,
-            (panel.centerx, y),
-            24,
-            settings.INK,
-            display=True,
-            center=True,
-            max_width=panel.width - 60,
-            shadow=False,
-        )
-        text.draw(
-            self.screen,
-            self.selected.get("tagline", ""),
-            (panel.centerx, y + 34),
-            17,
-            settings.DIM,
-            center=True,
-            max_width=panel.width - 60,
-            shadow=False,
-        )
-
-        # fact block
-        fact_y = panel.y + 404
-        text.draw(self.screen, "FACT", (x, fact_y - 2), 15, settings.ACCENT, shadow=False)
-        text.draw(
-            self.screen,
-            self.selected.get("source", "NASA"),
-            (panel.right - 30, fact_y - 2),
-            14,
-            settings.FAINT,
-            right=True,
-            shadow=False,
-        )
-        text.draw(
-            self.screen,
-            self.selected["fact"],
-            (x, fact_y + 20),
-            17,
-            settings.INK,
-            max_width=panel.width - 48,
-            shadow=False,
-            line_gap=3,
-        )
-
-        # part row
-        if part:
-            row_y = panel.y + 526
-            sprites.draw_part(
-                self.screen,
-                (x + 12, row_y),
-                11,
-                settings.ACCENT,
-                self.t,
-                glow=False,
-            )
-            text.draw(
-                self.screen,
-                part,
-                (x + 34, row_y),
-                16,
-                settings.INK,
-                max_width=panel.width - 50,
-                shadow=False,
-            )
-
-        y = panel.bottom - 66
         if playable == "ending":
             if self.state.all_parts():
                 self.panel_buttons.append(
                     Button((x, y, width, 46), "Assemble the ship", self._launch_ending)
                 )
-            else:
-                text.draw(
-                    self.screen,
-                    f"requires {self.state.part_count}/{len(self.state.required_parts())} parts",
-                    (panel.centerx, y + 20),
-                    15,
-                    settings.DIM,
-                    center=True,
-                    shadow=False,
-                )
         elif playable:
-            unlocked = self.state.is_unlocked(self.selected)
+            unlocked = self.state.is_unlocked(planet)
             owned = self.state.has_part(part) if part else False
-            if owned:
-                text.draw(
-                    self.screen,
-                    "part recovered",
-                    (panel.centerx, y + 10),
-                    14,
-                    settings.GREEN,
-                    center=True,
-                    shadow=False,
-                )
-            elif unlocked:
+            if unlocked and not owned:
                 self.panel_buttons.append(
-                    Button((x, y, width, 46), f"Launch mission", self._launch_planet)
-                )
-            else:
-                text.draw(
-                    self.screen,
-                    "mission locked",
-                    (panel.centerx, y + 10),
-                    14,
-                    settings.DIM,
-                    center=True,
-                    shadow=False,
+                    Button((x, y, width, 46), "Launch mission", self._launch_planet)
                 )
         else:
-            logged = self.state.has_fact(f"{self.selected['id']}_fact")
             self.panel_buttons.append(
-                Button(
-                    (x, y, width, 46),
-                    "View fact again" if logged else "Add fact to log",
-                    self._log_archive,
-                )
+                Button((x, y, width, 46), "Log fact", self._log_archive)
             )
 
     def _launch_planet(self) -> None:
@@ -235,45 +127,106 @@ class MapScene(Scene):
         self.toast = f"{self.selected['name']} fact logged"
         self.toast_timer = 3.0
         self.state.save()
-        self._build_panel()
+
+    # --- helpers ------------------------------------------------------------
+    def _short(self, value: str, max_px: int, size: int = 14) -> str:
+        if text.measure(value, size)[0] <= max_px:
+            return value
+        trimmed = value
+        while trimmed and text.measure(trimmed + "...", size)[0] > max_px:
+            trimmed = trimmed[:-1]
+        return trimmed + "..."
+
+    def _fit_lines(self, value: str, width: int, max_height: int):
+        """Pick the largest text size whose wrapped block fits the given height."""
+        for size in (18, 17, 16, 15, 14):
+            lines = text.wrap(value, size, width, False)
+            line_h = text.font(size).get_linesize() + 3
+            if len(lines) * line_h <= max_height:
+                return size, lines, line_h
+        size = 14
+        lines = text.wrap(value, size, width, False)
+        line_h = text.font(size).get_linesize() + 3
+        max_lines = max(1, max_height // line_h)
+        if len(lines) > max_lines:
+            lines = lines[:max_lines]
+            if len(lines[-1]) > 1:
+                lines[-1] = lines[-1][:-1] + "..."
+        return size, lines, line_h
+
+    def _chip(
+        self,
+        screen: pygame.Surface,
+        *,
+        cy: int,
+        label: str,
+        color: tuple[int, int, int],
+        right: int | None = None,
+        left: int | None = None,
+    ) -> int:
+        width = text.measure(label, 14)[0] + 26
+        rect = pygame.Rect(0, 0, width, 26)
+        rect.centery = cy
+        if right is not None:
+            rect.right = right
+        else:
+            rect.x = left or 0
+        pygame.draw.rect(screen, (9, 14, 26), rect, border_radius=13)
+        pygame.draw.rect(screen, color, rect, 1, border_radius=13)
+        text.draw(
+            screen, label, (rect.centerx, rect.centery), 14, color,
+            center=True, middle=True, shadow=False,
+        )
+        return width
+
+    def _draw_part_chips(self, screen: pygame.Surface) -> None:
+        by_part = {p.get("part"): p for p in self.planets if p.get("part")}
+        x = 204
+        for part in self.state.required_parts():
+            planet = by_part.get(part)
+            pcolor = hex_to_rgb(planet.get("color", "#8fa3c8")) if planet else settings.ACCENT
+            owned = self.state.has_part(part)
+            label = self._short(part, 118)
+            chip_w = max(150, text.measure(label, 14)[0] + 56)
+            rect = pygame.Rect(x, 30, chip_w, 30)
+            pygame.draw.rect(screen, (9, 14, 26), rect, border_radius=15)
+            pygame.draw.rect(
+                screen, settings.GREEN if owned else settings.PANEL_EDGE, rect, 1, border_radius=15
+            )
+            pygame.draw.circle(screen, pcolor if owned else settings.FAINT, (rect.x + 17, rect.centery), 5)
+            text.draw(
+                screen, label, (rect.x + 32, rect.centery), 14,
+                settings.INK if owned else settings.DIM, middle=True, shadow=False,
+            )
+            x += chip_w + 10
 
     # --- input --------------------------------------------------------------
     def handle_events(self, events: list[pygame.event.Event]) -> None:
+        for event in events:
+            if event.type == pygame.MOUSEMOTION:
+                self.mouse = event.pos
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.manager.switch(settings.MENU)
                     return
                 if event.key in (pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_SPACE):
-                    if self.selected and any(not b.enabled for b in []) and False:
-                        pass
+                    self._launch_selected()
                     return
-            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                planet = self._find_at(event.pos)
-                if planet is not None:
-                    self.select(planet)
-                    return
-                panel = self._panel_rect()
-                if panel.collidepoint(event.pos):
-                    pass
-                else:
-                    self.deselect()
 
-        # panel buttons
-        for index, button in enumerate(self.panel_buttons):
+        if self.menu_button.handle_events(events):
+            return
+        for button in self.panel_buttons:
             if button.handle_events(events):
                 return
 
-        # map-level keys
         for event in events:
-            if event.type == pygame.KEYDOWN and event.key in (
-                pygame.K_RETURN,
-                pygame.K_KP_ENTER,
-                pygame.K_SPACE,
-            ):
-                if self.selected:
-                    self._launch_selected()
-                return
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                planet = self._find_at(event.pos)
+                if planet is not None:
+                    self.select(planet)
+                elif not self._panel_rect().collidepoint(event.pos):
+                    self.deselect()
 
     def _launch_selected(self) -> None:
         planet = self.selected
@@ -285,11 +238,12 @@ class MapScene(Scene):
             if self.state.all_parts():
                 self.manager.switch(settings.ENDING)
             return
-        if self.state.has_part(part) if part else False:
+        if part and self.state.has_part(part):
             return
         if self.state.is_unlocked(planet):
             self.manager.switch(playable)
 
+    # --- update -------------------------------------------------------------
     def update(self, dt: float) -> None:
         self.t += dt
         if self.toast_timer > 0:
@@ -297,62 +251,57 @@ class MapScene(Scene):
             if self.toast_timer <= 0:
                 self.toast = ""
 
+    # --- drawing ------------------------------------------------------------
     def draw(self, screen: pygame.Surface) -> None:
         self.screen = screen
         screen.blit(self.stars, (0, 0))
         screen.blit(self.neb, (0, 0))
 
-        # orbits (skip duplicates)
-        seen_orbits = set()
         sun_pos = (settings.WIDTH // 2, settings.HEIGHT // 2 + 16)
+        self._draw_orbits(screen, sun_pos)
+        planets.draw_sun(screen, sun_pos, 44, self.t)
+        self._draw_mission_hints(screen, sun_pos)
+        self._draw_planets(screen)
+        self._draw_status_bar(screen)
+        self.menu_button.draw(screen)
+        self._draw_panel(screen)
+
+        for button in self.panel_buttons:
+            button.draw(screen)
+
+        self._draw_toast(screen)
+        screen.blit(self.vignette, (0, 0))
+
+    def _draw_orbits(self, screen: pygame.Surface, sun_pos: tuple[int, int]) -> None:
+        seen: set[int] = set()
         for planet in self.planets:
             orbit = planet["orbit_px"]
-            if orbit in seen_orbits:
+            if orbit in seen:
                 continue
-            seen_orbits.add(orbit)
-            planets.draw_orbit(
-                screen,
-                sun_pos,
-                orbit,
-                color=(38, 58, 96),
-                dashed=2,
-            )
+            seen.add(orbit)
+            planets.draw_orbit(screen, sun_pos, orbit, color=(36, 54, 88), dashed=2)
 
-        planets.draw_sun(screen, sun_pos, 44, self.t)
-
-        # hints: pulse arcs toward the nearest playable planet
+    def _draw_mission_hints(self, screen: pygame.Surface, sun_pos: tuple[int, int]) -> None:
         for planet in self.planets:
+            if not planet.get("playable"):
+                continue
             px, py = planet["_pos"]
-            is_playable = bool(planet.get("playable"))
-            if is_playable:
-                dist = math.hypot(px - settings.WIDTH // 2, py - settings.HEIGHT // 2)
-                if dist > 60:
-                    angle = math.atan2(py - settings.HEIGHT // 2, px - settings.WIDTH // 2)
-                    radius = min(dist - planet["radius"] - 8, 34)
-                    anchor_x = settings.WIDTH // 2 + math.cos(angle) * radius
-                    anchor_y = settings.HEIGHT // 2 + math.sin(angle) * radius
-                    pulse = 0.35 + 0.35 * abs(math.sin(self.t * 2.0 + planet["_seed"] if "_seed" in planet else self.t * 2.0))
-                    pygame.draw.line(
-                        screen,
-                        settings.ACCENT,
-                        (settings.WIDTH // 2, settings.HEIGHT // 2),
-                        (anchor_x, anchor_y),
-                        1,
-                    )
-                    pygame.draw.circle(
-                        screen,
-                        settings.ACCENT,
-                        (int(anchor_x), int(anchor_y)),
-                        int(2 + 2 * pulse),
-                    )
+            dist = math.hypot(px - sun_pos[0], py - sun_pos[1])
+            if dist <= 70:
+                continue
+            angle = math.atan2(py - sun_pos[1], px - sun_pos[0])
+            anchor_r = min(dist - planet["radius"] - 10, 40)
+            ax = sun_pos[0] + math.cos(angle) * anchor_r
+            ay = sun_pos[1] + math.sin(angle) * anchor_r
+            pulse = 0.35 + 0.35 * abs(math.sin(self.t * 2.0))
+            pygame.draw.line(screen, settings.ACCENT, sun_pos, (ax, ay), 1)
+            pygame.draw.circle(screen, settings.ACCENT, (int(ax), int(ay)), int(2 + 2 * pulse))
 
-        # planets
+    def _draw_planets(self, screen: pygame.Surface) -> None:
         hover = self._find_at(self.mouse)
         for planet in self.planets:
             px, py = planet["_pos"]
             color = hex_to_rgb(planet.get("color", "#8fa3c8"))
-            if planet == hover:
-                draw_ring(screen, px, py, int(planet["radius"]) * 1.9 + 10, settings.ACCENT, self.t)
             planets.draw_planet(
                 screen,
                 (px, py),
@@ -366,98 +315,82 @@ class MapScene(Scene):
                 ring_color=hex_to_rgb(planet.get("ring_color", "#d2c4b4")),
             )
             if self.selected == planet:
-                pygame.draw.circle(screen, settings.ACCENT, (px, py), int(planet["radius"]) * 1.55, 2)
+                pygame.draw.circle(screen, settings.ACCENT, (px, py), int(planet["radius"]) * 1.6, 2)
+                pygame.draw.circle(screen, settings.ACCENT, (px, py), int(planet["radius"]) * 1.9, 1)
                 self._draw_hover_tooltip(screen, planet)
             elif planet == hover:
+                draw_ring(screen, px, py, int(planet["radius"]) * 1.9 + 10, settings.ACCENT, self.t)
                 self._draw_hover_tooltip(screen, planet)
 
-        # status bar top-left
+    def _draw_status_bar(self, screen: pygame.Surface) -> None:
+        text.draw(screen, "SOLAR SYSTEM", (20, 16), 20, settings.ACCENT, display=True, shadow=False)
+        required = self.state.required_parts()
         text.draw(
             screen,
-            "SOLAR SYSTEM",
-            (20, 18),
-            20,
-            settings.ACCENT,
-            display=True,
-            shadow=False,
-        )
-        text.draw(
-            screen,
-            f"PARTS {self.state.part_count}/{len(self.state.required_parts())}",
+            f"PARTS {self.state.part_count}/{len(required)}",
             (20, 44),
             19,
             settings.INK,
             shadow=False,
         )
+        self._draw_part_chips(screen)
 
-        # part dots across the top
-        x = 210
-        for part in self.state.required_parts():
-            owned = self.state.has_part(part)
-            color = settings.GREEN if owned else settings.FAINT
-            sprites.draw_part(screen, (x, 46), 9, color, self.t, glow=False)
-            text.draw(screen, part, (x + 20, 38), 14, settings.DIM, max_width=250, shadow=False)
-            x += 180
-
-        # menu button
-        menu_btn = Button((settings.WIDTH - 300, 16, 284, 44), "Back to menu", self.manager.switch)
-        menu_btn.on_click = lambda: self.manager.switch(settings.MENU)
-        menu_btn.draw(screen)
-
-        # detail panel
+    def _draw_panel(self, screen: pygame.Surface) -> None:
         panel = self._panel_rect()
         pygame.draw.rect(screen, settings.PANEL, panel, border_radius=14)
-        pygame.draw.rect(screen, settings.PANEL_EDGE, panel, 1, border_radius=14)
-        text.draw(screen, "DETAILS", (panel.x + 18, panel.y + 22), 17, settings.ACCENT, display=True)
-        pygame.draw.line(screen, settings.PANEL_EDGE, (panel.x + 18, panel.y + 44), (panel.right - 18, panel.y + 44), 1)
+        pygame.draw.rect(screen, settings.PANEL_EDGE, panel, 2, border_radius=14)
 
-        if self.selected:
-            self._draw_selected_detail(screen)
-        else:
+        header_h = 56
+        text.draw(screen, "DETAILS", (panel.x + 20, panel.y + 18), 16, settings.ACCENT, display=True)
+        text.draw(
+            screen,
+            "click empty space to close",
+            (panel.right - 20, panel.y + 22),
+            14,
+            settings.FAINT,
+            right=True,
+            shadow=False,
+        )
+        pygame.draw.line(
+            screen, settings.PANEL_EDGE,
+            (panel.x + 2, panel.y + header_h), (panel.right - 2, panel.y + header_h), 1,
+        )
+
+        if self.selected is None:
             text.draw(
                 screen,
-                "Select a planet to inspect its mission or archive fact.",
+                "Select a planet to inspect\nits mission or archive fact.",
                 (panel.centerx, panel.centery),
-                18,
+                20,
                 settings.DIM,
                 center=True,
                 shadow=False,
             )
+            return
 
-        for button in self.panel_buttons:
-            button.draw(screen)
+        self._draw_panel_content(screen, panel)
 
-        # toast
-        if self.toast:
-            label = self.toast
-            width = text.measure(label, 18)[0] + 40
-            rect = pygame.Rect((settings.WIDTH - width) // 2, settings.HEIGHT - 66, width, 30)
-            pygame.draw.rect(screen, (6, 11, 24, 220), rect, border_radius=15)
-            pygame.draw.rect(screen, settings.GOLD, rect, 1, border_radius=15)
-            text.draw(
-                screen,
-                label,
-                (rect.centerx, rect.centery),
-                18,
-                settings.INK,
-                center=True,
-                middle=True,
-                shadow=False,
-            )
-
-        screen.blit(self.vignette, (0, 0))
-
-    def _draw_selected_detail(self, screen: pygame.Surface) -> None:
-        panel = self._panel_rect()
+    def _draw_panel_content(self, screen: pygame.Surface, panel: pygame.Rect) -> None:
         planet = self.selected
-        px, py = planet["_pos"]
-        preview_y = panel.y + 96
-        preview_radius = min(52, int(planet["radius"]) * 5)
+        x = panel.x + 34
+        width = panel.width - 68
+        pcolor = hex_to_rgb(planet.get("color", "#8fa3c8"))
+        playable = planet.get("playable")
+        part = planet.get("part")
+
+        # accent underline in the planet's colour
+        pygame.draw.line(
+            screen, pcolor, (panel.x + 18, panel.y + 56), (panel.right - 18, panel.y + 56), 3
+        )
+
+        # preview
+        preview_r = 46
+        preview_cy = panel.y + 66 + preview_r
         planets.draw_planet(
             screen,
-            (panel.centerx, preview_y),
-            preview_radius,
-            hex_to_rgb(planet.get("color", "#8fa3c8")),
+            (panel.centerx, preview_cy),
+            preview_r,
+            pcolor,
             band_color=hex_to_rgb(planet.get("band_color", "#5a6b82")),
             bands=planet.get("bands", 0),
             craters=planet.get("craters", 0),
@@ -466,15 +399,96 @@ class MapScene(Scene):
             ring_color=hex_to_rgb(planet.get("ring_color", "#d2c4b4")),
         )
 
+        y = preview_cy + preview_r + 16
+
+        if playable == "ending":
+            title = f"{planet['name']} - Finale"
+        elif playable:
+            title = f"{planet['name']} Mission"
+        else:
+            title = f"{planet['name']} - Archive"
+        text.draw(
+            screen, title, (panel.centerx, y), 16, settings.INK,
+            display=True, center=True, shadow=False,
+        )
+        y += 28
+        text.draw(
+            screen, planet.get("tagline", ""), (panel.centerx, y), 16, settings.DIM,
+            center=True, max_width=width, shadow=False,
+        )
+        y += 30
+
+        pygame.draw.line(screen, settings.PANEL_EDGE, (x, y), (panel.right - 34, y), 1)
+        y += 12
+
+        text.draw(screen, "FACT", (x, y), 14, settings.ACCENT, shadow=False)
+        text.draw(
+            screen, planet.get("source", "NASA"),
+            (panel.right - 34, y), 13, settings.FAINT, right=True, shadow=False,
+        )
+        y += 20
+
+        # part / status row (reserved space at the bottom of the panel)
+        part_row_cy = panel.bottom - 96
+        max_fact_h = max(40, part_row_cy - 14 - y)
+        size, lines, line_h = self._fit_lines(planet["fact"], width, max_fact_h)
+        for index, line in enumerate(lines):
+            text.draw(screen, line, (x, y + index * line_h), size, settings.INK, shadow=False)
+
+        # --- bottom row: status depends on mission type ------------------------
+        if playable == "ending":
+            if self.state.all_parts():
+                self._chip(screen, cy=part_row_cy, label="READY TO LAUNCH", color=settings.GREEN, right=panel.right - 34)
+            else:
+                label = f"PARTS {self.state.part_count}/{len(self.state.required_parts())}"
+                self._chip(screen, cy=part_row_cy, label=label, color=settings.GOLD, right=panel.right - 34)
+            text.draw(
+                screen, "Rebuild the ship to go home", (x, part_row_cy), 15,
+                settings.DIM, middle=True, shadow=False,
+            )
+        elif playable:
+            owned = self.state.has_part(part) if part else False
+            if part:
+                pygame.draw.circle(
+                    screen, pcolor if owned else settings.FAINT, (x + 8, part_row_cy), 6,
+                    0 if owned else 1,
+                )
+                text.draw(
+                    screen, self._short(part, width - 170, 16), (x + 22, part_row_cy), 16,
+                    settings.INK, middle=True, shadow=False,
+                )
+            if owned:
+                self._chip(screen, cy=part_row_cy, label="RECOVERED", color=settings.GREEN, right=panel.right - 34)
+            elif self.state.is_unlocked(planet):
+                self._chip(screen, cy=part_row_cy, label="MISSION READY", color=settings.ACCENT, right=panel.right - 34)
+            else:
+                self._chip(screen, cy=part_row_cy, label="LOCKED", color=settings.DANGER, right=panel.right - 34)
+        else:
+            self._chip(screen, cy=part_row_cy, label="DATA ONLY", color=settings.FAINT, right=panel.right - 34)
+            text.draw(
+                screen, "Not recoverable on a flyby", (x, part_row_cy), 15,
+                settings.DIM, middle=True, shadow=False,
+            )
+
+    def _draw_toast(self, screen: pygame.Surface) -> None:
+        if not self.toast:
+            return
+        width = text.measure(self.toast, 18)[0] + 40
+        rect = pygame.Rect((settings.WIDTH - width) // 2, settings.HEIGHT - 66, width, 30)
+        pygame.draw.rect(screen, (6, 11, 24), rect, border_radius=15)
+        pygame.draw.rect(screen, settings.GOLD, rect, 1, border_radius=15)
+        text.draw(
+            screen, self.toast, (rect.centerx, rect.centery), 18,
+            settings.INK, center=True, middle=True, shadow=False,
+        )
+
     def _draw_hover_tooltip(self, screen: pygame.Surface, planet) -> None:
         name = planet["name"]
         width = text.measure(name, 16)[0] + 20
-        rect = pygame.Rect(
-            planet["_pos"][0] - width // 2,
-            planet["_pos"][1] - 34,
-            width,
-            20,
-        )
+        rect = pygame.Rect(planet["_pos"][0] - width // 2, planet["_pos"][1] - 36, width, 22)
         pygame.draw.rect(screen, settings.PANEL, rect, border_radius=6)
         pygame.draw.rect(screen, settings.PANEL_EDGE, rect, 1, border_radius=6)
-        text.draw(screen, name, (rect.centerx, rect.centery), 16, settings.INK, center=True, middle=True, shadow=False)
+        text.draw(
+            screen, name, (rect.centerx, rect.centery), 16, settings.INK,
+            center=True, middle=True, shadow=False,
+        )

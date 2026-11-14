@@ -13,3 +13,4 @@ Thumbs.db
 .vscode/
 savegame.json
 *.log
+tools/shots/

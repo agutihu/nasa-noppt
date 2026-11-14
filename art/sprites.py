@@ -73,18 +73,20 @@ def draw_astronaut(
     if blink:
         pygame.draw.circle(surface, settings.ACCENT, (int(cx - f * 12 * s), int(cy - 19 * s + bob)), max(1, int(1.6 * s)))
 
-    # legs (animated walk cycle) and boots
+    # legs (animated walk cycle) and boots stay planted on the ground line
+    ground = cy + 17 * s
     for index in (-1, 1):
         swing = step * index if moving else index * 1.2 * s
+        leg_h = 9 * s + abs(swing) * 0.2
         hip_x = cx + index * 4 * s
         leg = pygame.Rect(
             int(hip_x - 3 * s + swing * 0.4),
-            int(cy + 9 * s + bob),
+            int(ground - leg_h),
             int(6 * s),
-            int(8 * s + abs(swing) * 0.2),
+            int(leg_h),
         )
         pygame.draw.rect(surface, shade, leg, border_radius=max(1, int(2 * s)))
-        boot = pygame.Rect(leg.x - int(1 * s), leg.bottom - int(3 * s), leg.width + int(3 * s), int(3 * s))
+        boot = pygame.Rect(leg.x - int(1 * s), ground - int(3 * s), leg.width + int(3 * s), int(3 * s))
         pygame.draw.rect(surface, dark, boot, border_radius=max(1, int(1 * s)))
 
     # torso with chest stripe + suit light

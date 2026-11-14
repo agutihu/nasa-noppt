@@ -24,6 +24,7 @@ class GameState:
     facts: list[str] = field(default_factory=list)
     deaths: int = 0
     difficulty: str = "normal"
+    player_name: str = "Pilot"
     current_level: str | None = None
     elapsed: float = 0.0
     tutorial_done: bool = False
@@ -153,6 +154,7 @@ class GameState:
             "facts": list(self.facts),
             "deaths": self.deaths,
             "difficulty": self.difficulty,
+            "player_name": self.player_name,
             "current_level": self.current_level,
             "elapsed": round(self.elapsed, 2),
             "tutorial_done": self.tutorial_done,
@@ -173,6 +175,7 @@ class GameState:
             facts=_list(data.get("facts")),
             deaths=int(data.get("deaths", 0) or 0),
             difficulty=str(data.get("difficulty", "normal")),
+            player_name=str(data.get("player_name", "Pilot"))[:16],
             current_level=data.get("current_level"),
             elapsed=float(data.get("elapsed", 0.0) or 0.0),
             tutorial_done=bool(data.get("tutorial_done", False)),
@@ -205,6 +208,7 @@ class GameState:
         self.text_scale = restored.text_scale
         self.levels_done = restored.levels_done
         self.best_times = restored.best_times
+        self.player_name = restored.player_name
         return True
 
     # --- derived text -------------------------------------------------------

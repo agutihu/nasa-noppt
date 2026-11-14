@@ -135,8 +135,19 @@ def make_backdrop(theme: dict, seed: int) -> dict:
 
 
 def draw_backdrop(backdrop: dict, screen: pygame.Surface, camera_x: float) -> None:
-    screen.blit(backdrop["sky"], (0, 0))
+    """Draw the baked sky and parallax ridges, sized for whatever surface they go on."""
+    width, height = screen.get_size()
+    sky = backdrop.get("sky_scaled")
+    if sky is None or sky.get_size() != (width, height):
+        sky = pygame.transform.scale(backdrop["sky"], (width, height))
+        backdrop["sky_scaled"] = sky
+    screen.blit(sky, (0, 0))
     for layer, factor in backdrop["layers"]:
-        off = int(camera_x * factor) % settings.WIDTH
-        screen.blit(layer, (-off, settings.HEIGHT - layer.get_height()))
-        screen.blit(layer, (-off + settings.WIDTH, settings.HEIGHT - layer.get_height()))
+        key = f"layer_{factor}"
+        scaled = backdrop.get(key)
+        if scaled is None or scaled.get_width() != width:
+            scaled = pygame.transform.scale(layer, (width, layer.get_height()))
+            backdrop[key] = scaled
+        off = int(camera_x * factor) % width
+        screen.blit(scaled, (-off, height - scaled.get_height()))
+        screen.blit(scaled, (-off + width, height - scaled.get_height()))

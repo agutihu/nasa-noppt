@@ -19,6 +19,7 @@ class HUD:
         self.hint_prompt = False
         self.t = 0.0
         self.target: tuple[str, tuple[int, int, int]] | None = None
+        self.checklist: list[dict] = []
         self._planet_colors: dict[str, tuple[int, int, int]] = {}
         for planet in levels.load_planets()["planets"]:
             part = planet.get("part")
@@ -39,6 +40,10 @@ class HUD:
     def set_target(self, name: str, color: tuple[int, int, int]) -> None:
         """Show the labeled part this level is about, right in the top bar."""
         self.target = (name, color)
+
+    def set_checklist(self, items: list[dict]) -> None:
+        """Collectible tracker shown in a small box under the top bar."""
+        self.checklist = list(items)
 
     def update(self, dt: float) -> None:
         self.t += dt
@@ -124,6 +129,8 @@ class HUD:
                 alpha=int(255 * pulse) if danger else 255,
             )
 
+        self._draw_checklist(surface)
+
         # objective
         if self.objective:
             text.draw(
@@ -132,7 +139,7 @@ class HUD:
                 (24, 66),
                 20,
                 settings.DIM,
-                max_width=settings.WIDTH - 48,
+                max_width=settings.WIDTH // 2 - 150,
                 shadow=False,
             )
 
@@ -152,3 +159,36 @@ class HUD:
                 middle=True,
                 shadow=False,
             )
+
+    def _draw_checklist(self, surface: pygame.Surface) -> None:
+        """Small top-center box: everything collectible in this world, ticked as gathered."""
+        if not self.checklist:
+            return
+        rows = len(self.checklist)
+        height = 24 + rows * 19 + 8
+        rect = pygame.Rect(0, 0, 236, height)
+        rect.midtop = (settings.WIDTH // 2, 62)
+        panel = pygame.Surface(rect.size, pygame.SRCALPHA)
+        panel.fill((6, 11, 24, 205))
+        surface.blit(panel, rect.topleft)
+        pygame.draw.rect(surface, settings.PANEL_EDGE, rect, 1, border_radius=10)
+        text.draw(
+            surface, "COLLECT", (rect.centerx, rect.top + 12), 13,
+            settings.FAINT, center=True, shadow=False,
+        )
+        y = rect.top + 30
+        for item in self.checklist:
+            dot = item.get("color", settings.ACCENT)
+            done = bool(item.get("done"))
+            if done:
+                pygame.draw.circle(surface, settings.GREEN, (rect.left + 16, y + 8), 4)
+                pygame.draw.line(
+                    surface, settings.PANEL_EDGE,
+                    (rect.left + 28, y + 8),
+                    (rect.left + 28 + text.measure(item["label"], 15)[0], y + 8), 1,
+                )
+                text.draw(surface, item["label"], (rect.left + 28, y), 15, settings.FAINT, shadow=False)
+            else:
+                pygame.draw.circle(surface, dot, (rect.left + 16, y + 8), 4, 1)
+                text.draw(surface, item["label"], (rect.left + 28, y), 15, settings.INK, shadow=False)
+            y += 19

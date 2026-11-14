@@ -25,6 +25,10 @@ def generate(level_id: str, params: dict, difficulty: str = "normal") -> dict:
     diff = {"easy": 0.8, "hard": 1.25}.get(difficulty, 1.0)
 
     platforms: list[pygame.Rect] = []
+    ground_plats: list[pygame.Rect] = []
+    float_plats: list[pygame.Rect] = []
+    props: list[dict] = []
+    pickups: list[dict] = []
     hazards: list[dict] = []
     enemies: list[dict] = []
     checkpoints: list[int] = [60]
@@ -54,10 +58,14 @@ def generate(level_id: str, params: dict, difficulty: str = "normal") -> dict:
 
     # starting pad: flat, safe, where the drop pod lands
     if not floaty:
-        platforms.append(pygame.Rect(0, ground_y, 620, world_h - ground_y))
+        start_pad = pygame.Rect(0, ground_y, 620, world_h - ground_y)
+        platforms.append(start_pad)
+        ground_plats.append(start_pad)
         x = 620
     else:
-        platforms.append(pygame.Rect(0, ground_y - 40, 360, 26))
+        start_pad = pygame.Rect(0, ground_y - 40, 360, 26)
+        platforms.append(start_pad)
+        float_plats.append(start_pad)
         x = 380
     top = ground_y
     checkpoint_every = length / 4.0
@@ -71,7 +79,9 @@ def generate(level_id: str, params: dict, difficulty: str = "normal") -> dict:
             for _ in range(rng.randint(2, 3)):
                 pw = rng.randint(140, 230)
                 py = int(max(300, min(ground_y - 30, base_y + rng.randint(-90, 90))))
-                platforms.append(pygame.Rect(int(x), py, pw, 26))
+                step = pygame.Rect(int(x), py, pw, 26)
+                platforms.append(step)
+                float_plats.append(step)
                 if first_top is None:
                     first_top = py
                 # hazards and UFOs live on/above the platforms
@@ -106,6 +116,7 @@ def generate(level_id: str, params: dict, difficulty: str = "normal") -> dict:
         top = max(350, min(ground_y + 30, top))
         plat = pygame.Rect(int(x), int(top), seg_w, world_h - top)
         platforms.append(plat)
+        ground_plats.append(plat)
 
         if x >= next_checkpoint:
             checkpoints.append(int(x + seg_w // 2))
@@ -148,22 +159,28 @@ def generate(level_id: str, params: dict, difficulty: str = "normal") -> dict:
             if rng.random() < platform_chance:
                 fx = int(x + seg_w + gap // 2 - 70)
                 fy = int(min(top, ground_y) - rng.randint(90, 170))
-                platforms.append(pygame.Rect(fx, fy, rng.randint(130, 190), 26))
+                stone = pygame.Rect(fx, fy, rng.randint(130, 190), 26)
+                platforms.append(stone)
+                float_plats.append(stone)
         x += seg_w + gap
 
     # final plateau: part pedestal and the return pad
     final_w = int(length - x + 40)
     if floaty:
         final_top = ground_y - 60
-        platforms.append(pygame.Rect(int(x), int(final_top), max(final_w, 400), 26))
+        deck = pygame.Rect(int(x), int(final_top), max(final_w, 400), 26)
+        platforms.append(deck)
         platforms.append(
             pygame.Rect(int(x), int(final_top + 26), max(final_w, 400), 40)
         )
+        float_plats.append(deck)
     else:
         final_top = ground_y - 20
-        platforms.append(
-            pygame.Rect(int(x), int(final_top), final_w, world_h - final_top)
+        plateau = pygame.Rect(
+            int(x), int(final_top), final_w, world_h - final_top
         )
+        platforms.append(plateau)
+        ground_plats.append(plateau)
     checkpoints.append(int(x + 60))
 
     part_x = length - 470
@@ -187,11 +204,72 @@ def generate(level_id: str, params: dict, difficulty: str = "normal") -> dict:
                 }
             )
 
+    # decorative props: rocks, crystals, plants, ruins — the world should feel lived in
+    prop_kinds = list(params.get("props", ["rock", "crystal", "plant"]))
+    if prop_kinds:
+        for plat in ground_plats:
+            if plat.width < 240 or plat.x < 500 or plat.x > length - 900:
+                continue
+            for _ in range(max(1, int(plat.width // 190))):
+                px = int(plat.x + rng.randint(40, max(60, plat.width - 40)))
+                if any(
+                    abs(px - h["x"]) < 90 and h.get("y") == plat.top for h in hazards
+                ):
+                    continue  # keep decorations clear of hazards
+                props.append(
+                    {
+                        "kind": rng.choice(prop_kinds),
+                        "x": px,
+                        "y": int(plat.top),
+                        "s": round(rng.uniform(0.7, 1.35), 2),
+                        "variant": rng.randint(0, 2),
+                    }
+                )
+        if floaty:
+            for plat in float_plats:
+                if plat.x < 500 or plat.x > length - 900 or rng.random() > 0.55:
+                    continue
+                props.append(
+                    {
+                        "kind": rng.choice(prop_kinds),
+                        "x": int(plat.centerx + rng.randint(-plat.width // 3, plat.width // 3)),
+                        "y": int(plat.top),
+                        "s": round(rng.uniform(0.6, 1.0), 2),
+                        "variant": rng.randint(0, 2),
+                    }
+                )
+
+    # collectibles: health canisters to find, bonus cells for the checklist
+    health_count = int(params.get("health_pickups", 3))
+    bonus_count = int(params.get("bonus_pickups", 5))
+    hosts = [p for p in (ground_plats or float_plats) if 500 < p.x < length - 900]
+    if hosts:
+        for i in range(health_count):
+            plat = hosts[min(len(hosts) - 1, int((i + 0.5) / max(1, health_count) * len(hosts)))]
+            pickups.append(
+                {
+                    "type": "health",
+                    "x": int(plat.centerx + rng.randint(-plat.width // 4, plat.width // 4)),
+                    "y": int(plat.top - 20),
+                }
+            )
+        for i in range(bonus_count):
+            plat = hosts[min(len(hosts) - 1, int((i + 0.5) / max(1, bonus_count) * len(hosts)))]
+            pickups.append(
+                {
+                    "type": "bonus",
+                    "x": int(plat.centerx + rng.randint(-plat.width // 3, plat.width // 3)),
+                    "y": int(plat.top - 24),
+                }
+            )
+
     return {
         "platforms": platforms,
         "hazards": hazards,
         "enemies": enemies,
         "checkpoints": checkpoints,
+        "props": props,
+        "pickups": pickups,
         "start_pos": (90, 360),
         "part_pos": (part_x, part_y),
         "exit_pos": (length - 170, final_top - 44),

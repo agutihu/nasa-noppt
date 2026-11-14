@@ -60,6 +60,11 @@ class WorldLevelBase(Scene):
         self.world_w = self.gen["world_w"]
         self.world_h = self.gen["world_h"]
         self.world_rect = pygame.Rect(0, 0, self.world_w, self.world_h + 300)
+        # closer camera: the world is rendered at this zoom, then scaled to the window
+        self.zoom = max(1.0, float(self.params.get("zoom", 1.28)))
+        view_w = math.ceil(settings.WIDTH / self.zoom)
+        view_h = math.ceil(settings.HEIGHT / self.zoom)
+        self._view = pygame.Surface((view_w, view_h))
         self.backdrop = world_bg.make_backdrop(self.theme, self._seed())
         self.weather = weather_mod.Weather(self.params.get("weather"))
 
@@ -99,6 +104,26 @@ class WorldLevelBase(Scene):
         self.exit_pos = self.gen["exit_pos"]
         self.exit_active = False
 
+        # collectibles and decorations from the generator
+        self.props = self.gen.get("props", [])
+        self.pickups = [
+            Pickup(
+                (spec["x"], spec["y"]),
+                spec["type"],
+                color=self.theme["accent"] if spec["type"] == "bonus" else (255, 120, 140),
+                radius=8,
+            )
+            for spec in self.gen.get("pickups", [])
+        ]
+        self.total_health = sum(1 for item in self.pickups if item.kind == "health")
+        self.total_bonus = sum(1 for item in self.pickups if item.kind == "bonus")
+        self.health_taken = 0
+        self.bonus_taken = 0
+        self.sparks: list[list] = []
+        self.toast = ""
+        self.toast_timer = 0.0
+        self._refresh_checklist()
+
         # mars-style dust storm (optional)
         self.storm_interval = float(self.params.get("storm_interval", 0))
         self.storm_duration = float(self.params.get("storm_duration", 0))
@@ -107,6 +132,14 @@ class WorldLevelBase(Scene):
         self.storm_active = False
         self.storm_left = 0.0
         self.storm_hinted = False
+
+        # one scripted "signature moment" per world (Victoria's set piece)
+        self.moment_cfg = self.params.get("moment") or None
+        self.moment_x = int(self.world_w * float(self.moment_cfg.get("at", 0.55))) if self.moment_cfg else 0
+        self.moment_fired = False
+        self.moment_left = 0.0
+        self._moment_burst_timer = 0.0
+        self.moment_flash = 0.0
 
         self.dlg = DialogueBox(self.game)
         self.deaths_at_start = self.state.deaths
@@ -168,14 +201,22 @@ class WorldLevelBase(Scene):
         audio.play("part")
         self.state.add_part(self.cfg["part"]["name"])
         self.state.save()
+        self._toast(f"{self.cfg['part']['name'].upper()} RECOVERED")
+        self._refresh_checklist()
         lines = self.dialogue["lines"].get("part", [])
         if lines:
             self.dlg.queue(lines)
 
     # --- camera -------------------------------------------------------------
     def _camera_x(self) -> float:
-        target = self.player.pos.x - settings.WIDTH * 0.42
-        return max(0.0, min(target, self.world_w - settings.WIDTH))
+        view_w = self._view.get_width()
+        target = self.player.pos.x - view_w * 0.40
+        return max(0.0, min(target, self.world_w - view_w))
+
+    def _camera_y(self) -> float:
+        view_h = self._view.get_height()
+        target = self.player.pos.y - view_h * 0.62
+        return max(0.0, min(target, self.world_h - view_h))
 
     # --- storm --------------------------------------------------------------
     def _update_storm(self, dt: float) -> None:
@@ -199,6 +240,20 @@ class WorldLevelBase(Scene):
 
     # --- input --------------------------------------------------------------
     def handle_events(self, events: list[pygame.event.Event]) -> None:
+        if self.phase == "failed":
+            for event in events:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        self.manager.switch(settings.MAP)
+                        return
+                    if event.key in (pygame.K_SPACE, pygame.K_RETURN, pygame.K_KP_ENTER):
+                        self._retry()
+                        return
+                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    self._retry()
+                    return
+            return
+
         if self.phase == "brief":
             for event in events:
                 if event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN):
@@ -230,6 +285,10 @@ class WorldLevelBase(Scene):
     # --- update -------------------------------------------------------------
     def update(self, dt: float) -> None:
         self.t += dt
+        if self.phase == "failed":
+            self.toast_timer = max(0.0, self.toast_timer - dt)
+            self.hud.update(dt)
+            return
         if self.phase == "brief":
             return
 
@@ -256,6 +315,9 @@ class WorldLevelBase(Scene):
             self._update_storm(dt)
             self._check_pickups()
             self._advance_checkpoints()
+            for item in self.pickups:
+                item.update(dt)
+            self._update_moment(dt)
 
         self._update_projectiles(dt)
         self._update_death(dt)
@@ -310,13 +372,16 @@ class WorldLevelBase(Scene):
 
     def _update_projectiles(self, dt: float) -> None:
         for bolt in self.lasers:
-            bolt.update(dt, self.world_rect)
+            bolt.update(dt, self.world_rect, self.platforms)
+            if bolt.dead and bolt.impact:
+                self._spark(bolt.pos)
             if bolt.dead:
                 continue
             for walker in self.walkers:
                 if not walker.dead and bolt.rect.colliderect(walker.rect):
                     walker.hit()
                     bolt.dead = True
+                    self._spark(bolt.pos)
                     break
             if bolt.dead:
                 continue
@@ -324,15 +389,31 @@ class WorldLevelBase(Scene):
                 if not ufo.dead and bolt.rect.colliderect(ufo.rect):
                     ufo.hit()
                     bolt.dead = True
+                    self._spark(bolt.pos)
                     break
         self.lasers = [bolt for bolt in self.lasers if not bolt.dead]
 
         for shot in self.plasma:
-            shot.update(dt, self.world_rect)
-            if not shot.dead and shot.collides_player(self.player):
+            shot.update(dt, self.world_rect, self.platforms)
+            if shot.dead:
+                if shot.impact:
+                    self._spark(shot.pos)
+                continue
+            if shot.rect.colliderect(self.player.hit_rect):
                 self.player.take_damage()
                 shot.dead = True
+                self._spark(shot.pos, sound=False)
         self.plasma = [shot for shot in self.plasma if not shot.dead]
+
+        for spark in self.sparks:
+            spark[1] += dt
+        self.sparks = [spark for spark in self.sparks if spark[1] < 0.22]
+
+    def _spark(self, pos, sound: bool = True) -> None:
+        """Small impact flash wherever a bolt really hits."""
+        self.sparks.append([pygame.Vector2(pos), 0.0])
+        if sound:
+            audio.play("hit", 0.3)
 
     def _active_hazard_rect(self, hazard: dict) -> pygame.Rect | None:
         kind = hazard["type"]
@@ -385,6 +466,21 @@ class WorldLevelBase(Scene):
         if not self.part.taken and self.part.collides(self.player.rect):
             self._collect_part()
 
+        for item in self.pickups:
+            if item.taken or not item.collides(self.player.rect):
+                continue
+            item.taken = True
+            if item.kind == "health":
+                self.health_taken += 1
+                self.player.heal(1)
+                audio.play("pickup")
+                self._toast("SUPPLIES FOUND  +1 HEART")
+            else:
+                self.bonus_taken += 1
+                audio.play("pickup", 0.8)
+                self._toast(f"BONUS CELL  {self.bonus_taken}/{self.total_bonus}")
+            self._refresh_checklist()
+
         if self.exit_active:
             exit_rect = pygame.Rect(0, 0, 74, 84)
             exit_rect.center = (int(self.exit_pos[0]), int(self.exit_pos[1]))
@@ -400,7 +496,38 @@ class WorldLevelBase(Scene):
             if self.player.pos.x >= cp and not self.cp_active.get(cp):
                 self.cp_active[cp] = True
                 self.last_checkpoint = cp
-                audio.play("pickup", 0.4)
+                audio.play("pickup", 0.5)
+                self._toast("CHECKPOINT REACHED")
+
+    def _toast(self, message: str) -> None:
+        self.toast = message
+        self.toast_timer = 2.4
+
+    def _refresh_checklist(self) -> None:
+        items = [
+            {
+                "label": self.cfg["part"]["name"],
+                "done": self.part.taken,
+                "color": self.part_color,
+            }
+        ]
+        if self.total_health:
+            items.append(
+                {
+                    "label": f"Supplies  {self.health_taken}/{self.total_health}",
+                    "done": self.health_taken >= self.total_health,
+                    "color": (255, 120, 140),
+                }
+            )
+        if self.total_bonus:
+            items.append(
+                {
+                    "label": f"Bonus cells  {self.bonus_taken}/{self.total_bonus}",
+                    "done": self.bonus_taken >= self.total_bonus,
+                    "color": self.theme["accent"],
+                }
+            )
+        self.hud.set_checklist(items)
 
     def _update_death(self, dt: float) -> None:
         if self.player.pos.y > self.world_h + 220 and not self.player.dead:
@@ -408,15 +535,22 @@ class WorldLevelBase(Scene):
 
         if self.player.dead:
             self.restart_timer = getattr(self, "restart_timer", 0.0) + dt
-            if self.restart_timer > 1.0:
+            if self.restart_timer > 1.0 and self.phase != "failed":
+                # mission failed: show the fail screen instead of silently respawning
+                self.phase = "failed"
                 self.restart_timer = 0.0
                 self.state.deaths += 1
                 self.state.save()
-                respawn_y = self._ground_top_at(self.last_checkpoint) - 40
-                self.player.respawn(self.last_checkpoint, respawn_y)
-                if self.state.deaths - self.deaths_at_start >= 3 and not self.death_hinted:
-                    self.death_hinted = True
-                    self._death_hint()
+
+    def _retry(self) -> None:
+        """Restart the mission from the last checkpoint."""
+        self.phase = "play"
+        self.restart_timer = 0.0
+        respawn_y = self._ground_top_at(self.last_checkpoint) - 40
+        self.player.respawn(self.last_checkpoint, respawn_y)
+        if self.state.deaths - self.deaths_at_start >= 3 and not self.death_hinted:
+            self.death_hinted = True
+            self._death_hint()
 
     # --- test hooks ---------------------------------------------------------
     def _test_complete(self) -> None:
@@ -428,26 +562,36 @@ class WorldLevelBase(Scene):
     # --- drawing ------------------------------------------------------------
     def draw(self, screen: pygame.Surface) -> None:
         camera_x = int(self._camera_x())
-        camera = (camera_x, 0)
+        camera_y = int(self._camera_y())
+        camera = (camera_x, camera_y)
+        view = self._view
+        view.fill((4, 8, 18))
 
-        world_bg.draw_backdrop(self.backdrop, screen, camera_x)
-        self._draw_platforms(screen, camera)
-        self._draw_checkpoints(screen, camera)
-        self._draw_hazards(screen, camera)
-        self._draw_start_pod(screen, camera)
-        self._draw_exit(screen, camera)
-        self._draw_part(screen, camera)
+        world_bg.draw_backdrop(self.backdrop, view, camera_x)
+        self._draw_platforms(view, camera)
+        self._draw_props(view, camera)
+        self._draw_checkpoints(view, camera)
+        self._draw_hazards(view, camera)
+        self._draw_start_pod(view, camera)
+        self._draw_exit(view, camera)
+        self._draw_part(view, camera)
+        self._draw_pickups(view, camera)
 
         for walker in self.walkers:
-            walker.draw(screen, camera)
+            walker.draw(view, camera)
         for ufo in self.ufos:
-            ufo.draw(screen, camera)
+            ufo.draw(view, camera)
         for bolt in self.lasers:
-            bolt.draw(screen, camera)
+            bolt.draw(view, camera)
         for shot in self.plasma:
-            shot.draw(screen, camera)
+            shot.draw(view, camera)
 
-        self.player.draw(screen)
+        self.player.draw(view, camera)
+        self._draw_sparks(view, camera)
+
+        # scale the world pass up to the window: a closer camera on the action
+        pygame.transform.scale(view, (settings.WIDTH, settings.HEIGHT), screen)
+
         self.weather.draw(screen)
         self.weather.draw_haze(screen)
 
@@ -455,6 +599,7 @@ class WorldLevelBase(Scene):
             self._draw_storm(screen, camera)
 
         self.hud.draw(screen)
+        self._draw_toast(screen)
         self._draw_minimap(screen)
         self._draw_stopwatch(screen)
         self.dlg.draw(screen)
@@ -474,18 +619,141 @@ class WorldLevelBase(Scene):
 
     def _draw_checkpoints(self, screen: pygame.Surface, camera: tuple[int, int]) -> None:
         for cp in self.checkpoints:
-            top = self._ground_top_at(cp)
+            top = self._ground_top_at(cp) - camera[1]
             x = cp - camera[0]
-            if x < -30 or x > settings.WIDTH + 30:
+            if x < -40 or x > settings.WIDTH + 40 or top < -60 or top > settings.HEIGHT + 60:
                 continue
             active = self.cp_active.get(cp)
             color = self.theme["accent"] if active else settings.FAINT
-            pygame.draw.line(screen, (120, 136, 162), (x, top), (x, top - 34), 2)
+            # pulse halo on the checkpoint the player last touched
+            if active and cp == self.last_checkpoint:
+                pulse = 9 + int(3 * math.sin(self.t * 4.0))
+                pygame.draw.circle(screen, color, (int(x), int(top - 24)), pulse, 1)
+            pygame.draw.line(screen, (120, 136, 162), (x, top), (x, top - 46), 3)
+            pygame.draw.circle(screen, (10, 16, 28), (int(x), int(top - 47)), 3, 1)
+            wave = math.sin(self.t * 3.0 + cp * 0.7) * 2 if active else 0
             pygame.draw.polygon(
                 screen,
                 color,
-                [(x, top - 34), (x + 14, top - 29), (x, top - 24)],
+                [(x, top - 46), (x + 19, top - 40 + wave), (x, top - 32)],
             )
+            if not active:
+                pygame.draw.polygon(
+                    screen,
+                    (10, 16, 28),
+                    [(x, top - 46), (x + 19, top - 40), (x, top - 32)],
+                    1,
+                )
+
+    def _draw_props(self, screen: pygame.Surface, camera: tuple[int, int]) -> None:
+        """Decorations: rocks, crystals, plants, ruins — themed per world."""
+        for prop in self.props:
+            x = prop["x"] - camera[0]
+            if x < -60 or x > settings.WIDTH + 60:
+                continue
+            y = prop["y"] - camera[1]
+            s = prop["s"]
+            kind = prop["kind"]
+            if kind == "rock":
+                for dx, dy, r in ((-8, -3, 9), (4, -2, 7), (11, -3, 5)):
+                    pygame.draw.circle(
+                        screen, self.theme["ground_edge"],
+                        (int(x + dx * s), int(y + dy * s)), int(r * s),
+                    )
+                pygame.draw.circle(
+                    screen, self.theme["ridge_near"],
+                    (int(x - 2 * s), int(y - 8 * s)), int(5 * s),
+                )
+            elif kind == "crystal":
+                h = (26 + prop["variant"] * 9) * s
+                tilt = (-6 + prop["variant"] * 5) * s
+                pygame.draw.polygon(
+                    screen, self.theme["accent"],
+                    [(x - 6 * s, y), (x + 6 * s, y), (x + tilt, y - h)],
+                )
+                pygame.draw.polygon(
+                    screen, (255, 255, 255),
+                    [(x - 6 * s, y), (x + tilt, y - h), (x + tilt + 3 * s, y - h + 7 * s)],
+                    1,
+                )
+            elif kind == "plant":
+                stem = self.theme.get("plant", self.theme["ground_top"])
+                for i in range(3):
+                    angle = -0.5 + i * 0.5 + prop["variant"] * 0.2
+                    length = (16 + i * 7) * s
+                    tip = (x + math.sin(angle) * length, y - math.cos(angle) * length)
+                    pygame.draw.line(screen, stem, (x, y), tip, 2)
+                    pygame.draw.circle(screen, stem, (int(tip[0]), int(tip[1])), int(2.5 * s))
+            elif kind == "ruin":
+                h = (30 + prop["variant"] * 12) * s
+                w = 12 * s
+                rect = pygame.Rect(int(x - w / 2), int(y - h), int(w), int(h))
+                pygame.draw.rect(screen, self.theme["ridge_far"], rect, border_radius=2)
+                pygame.draw.rect(screen, self.theme["ground_edge"], rect, 1, border_radius=2)
+                pygame.draw.line(
+                    screen, self.theme["ground_edge"],
+                    (x - w / 2, y - h * 0.6), (x + w / 2, y - h * 0.5), 1,
+                )
+            else:  # shard: a floating crystal fragment
+                bob = math.sin(self.t * 1.6 + prop["x"] * 0.1) * 4 * s
+                size = 7 * s
+                pygame.draw.polygon(
+                    screen, self.theme["accent"],
+                    [
+                        (x, y - size + bob),
+                        (x + size * 0.7, y + bob),
+                        (x, y + size + bob),
+                        (x - size * 0.7, y + bob),
+                    ],
+                    1,
+                )
+
+    def _draw_pickups(self, screen: pygame.Surface, camera: tuple[int, int]) -> None:
+        for item in self.pickups:
+            if item.taken:
+                continue
+            ix = item.center[0] - camera[0]
+            iy = item.center[1] - camera[1]
+            if ix < -40 or ix > settings.WIDTH + 40:
+                continue
+            bob = math.sin(item.t * 3.0) * 3
+            if item.kind == "health":
+                halo = 11 + int(2 * math.sin(item.t * 4.0))
+                pygame.draw.circle(screen, (255, 120, 140), (int(ix), int(iy + bob)), halo, 1)
+                sprites.draw_heart(screen, (int(ix), int(iy + bob)), item.radius * 2, filled=True)
+            else:
+                halo = 12 + int(2 * math.sin(item.t * 4.0))
+                pygame.draw.circle(screen, item.color, (int(ix), int(iy + bob)), halo, 1)
+                sprites.draw_part(screen, (int(ix), int(iy + bob)), item.radius, item.color, item.t, glow=False)
+
+    def _draw_sparks(self, screen: pygame.Surface, camera: tuple[int, int]) -> None:
+        for pos, age in self.sparks:
+            k = age / 0.22
+            radius = int(3 + 10 * k)
+            alpha = int(230 * (1 - k))
+            size = radius * 2 + 4
+            ring = pygame.Surface((size, size), pygame.SRCALPHA)
+            pygame.draw.circle(ring, (255, 232, 170, alpha), (size // 2, size // 2), radius, 2)
+            screen.blit(
+                ring,
+                (int(pos.x - camera[0] - size // 2), int(pos.y - camera[1] - size // 2)),
+            )
+
+    def _draw_toast(self, screen: pygame.Surface) -> None:
+        if self.toast_timer <= 0.0 or not self.toast:
+            return
+        alpha = min(1.0, self.toast_timer / 0.4)
+        width = text.measure(self.toast, 17)[0] + 34
+        rect = pygame.Rect(0, 0, width, 30)
+        rect.midtop = (settings.WIDTH // 2, 170)
+        pill = pygame.Surface(rect.size, pygame.SRCALPHA)
+        pygame.draw.rect(pill, (6, 11, 24, int(215 * alpha)), pill.get_rect(), border_radius=15)
+        screen.blit(pill, rect.topleft)
+        pygame.draw.rect(screen, (*self.theme["accent"],), rect, 1, border_radius=15)
+        text.draw(
+            screen, self.toast, (rect.centerx, rect.centery), 17,
+            settings.INK, center=True, middle=True, shadow=False,
+        )
 
     def _draw_hazards(self, screen: pygame.Surface, camera: tuple[int, int]) -> None:
         for hazard in self.hazards:
@@ -494,7 +762,7 @@ class WorldLevelBase(Scene):
             if x < -200 or x > settings.WIDTH + 200:
                 continue
             if kind == "spikes":
-                base_y = hazard["y"]
+                base_y = hazard["y"] - camera[1]
                 for i in range(int(hazard["w"] // 14)):
                     sx = hazard["x"] + i * 14 - camera[0]
                     pygame.draw.polygon(
@@ -503,17 +771,17 @@ class WorldLevelBase(Scene):
                         [(sx, base_y), (sx + 14, base_y), (sx + 7, base_y - 13)],
                     )
             elif kind == "acid_pool":
-                rect = pygame.Rect(hazard["x"], hazard["y"] - 8, hazard["w"], 8).move(-camera[0], 0)
+                rect = pygame.Rect(hazard["x"], hazard["y"] - 8, hazard["w"], 8).move(-camera[0], -camera[1])
                 pygame.draw.rect(screen, (110, 220, 120), rect, border_radius=4)
                 for i in range(3):
                     bubble_x = hazard["x"] + (i + 0.5) * hazard["w"] / 3 - camera[0]
-                    bubble_y = hazard["y"] - 10 - 4 * abs(math.sin(self.t * 3 + i))
+                    bubble_y = hazard["y"] - 10 - camera[1] - 4 * abs(math.sin(self.t * 3 + i))
                     pygame.draw.circle(screen, (190, 255, 170), (int(bubble_x), int(bubble_y)), 2)
             elif kind == "ice":
-                rect = pygame.Rect(hazard["x"], hazard["y"] - 3, hazard["w"], 5).move(-camera[0], 0)
+                rect = pygame.Rect(hazard["x"], hazard["y"] - 3, hazard["w"], 5).move(-camera[0], -camera[1])
                 pygame.draw.rect(screen, (220, 245, 255), rect, border_radius=2)
             elif kind == "geyser":
-                vent = pygame.Rect(hazard["x"] - 18, hazard["y"] - 8, 36, 8).move(-camera[0], 0)
+                vent = pygame.Rect(hazard["x"] - 18, hazard["y"] - 8, 36, 8).move(-camera[0], -camera[1])
                 pygame.draw.rect(screen, (90, 74, 58), vent, border_radius=3)
                 phase = (self.t + hazard.get("offset", 0.0)) % hazard["cycle"]
                 if phase < 1.1:
@@ -525,7 +793,10 @@ class WorldLevelBase(Scene):
                         alpha = max(0, int(170 * strength * (1 - h / 190)))
                         particle = pygame.Surface((12, 12), pygame.SRCALPHA)
                         pygame.draw.circle(particle, (*color, alpha), (6, 6), 5)
-                        screen.blit(particle, (int(x + wobble - 6), int(hazard["y"] - 8 - h - camera[1])))
+                        screen.blit(
+                            particle,
+                            (int(x + wobble - 6), int(hazard["y"] - 8 - h - camera[1])),
+                        )
             elif kind == "lightning":
                 phase = (self.t + hazard.get("offset", 0.0)) % hazard["cycle"]
                 if phase < 0.5:
@@ -534,17 +805,17 @@ class WorldLevelBase(Scene):
                         pygame.draw.circle(
                             screen,
                             self.theme["hazard"],
-                            (int(x), int(20)),
+                            (int(x), int(20 - camera[1])),
                             int(6 + 10 * charge),
                             1,
                         )
                 if phase < 0.35:
                     top = self._ground_top_at(hazard["x"])
-                    points = [(int(x), 0)]
+                    points = [(int(x), int(-camera[1]))]
                     y = 0
                     while y < top:
                         y += 28
-                        points.append((int(x + random.uniform(-12, 12)), min(y, top)))
+                        points.append((int(x + random.uniform(-12, 12)), int(min(y, top) - camera[1])))
                     pygame.draw.lines(screen, (255, 240, 170), False, points, 2)
             elif kind == "wind":
                 phase = (self.t + hazard.get("offset", 0.0)) % hazard["cycle"]
@@ -562,12 +833,14 @@ class WorldLevelBase(Scene):
 
     def _draw_start_pod(self, screen: pygame.Surface, camera: tuple[int, int]) -> None:
         sx = 130 - camera[0]
-        ground_top = self._ground_top_at(130)
+        ground_top = self._ground_top_at(130) - camera[1]
+        if sx < -100 or sx > settings.WIDTH + 100:
+            return
         sprites.draw_ship(screen, (int(sx), int(ground_top - 34)), 0.8, self.t, damaged=True, thrust=False)
 
     def _draw_exit(self, screen: pygame.Surface, camera: tuple[int, int]) -> None:
         ex = int(self.exit_pos[0] - camera[0])
-        ey = int(self.exit_pos[1])
+        ey = int(self.exit_pos[1] - camera[1])
         if ex < -100 or ex > settings.WIDTH + 100:
             return
         sprites.draw_ship(screen, (ex, ey), 1.0, self.t, damaged=not self.exit_active, thrust=self.exit_active)
@@ -585,7 +858,9 @@ class WorldLevelBase(Scene):
             return
         px, py = self.part.center
         self.part.update(0.0)
-        sprites.draw_part(screen, (int(px - camera[0]), int(py)), self.part.radius, self.part_color, self.t)
+        px -= camera[0]
+        py -= camera[1]
+        sprites.draw_part(screen, (int(px), int(py)), self.part.radius, self.part_color, self.t)
         label = self.cfg["part"]["name"]
         width = text.measure(label, 15)[0] + 22
         rect = pygame.Rect(int(px - camera[0]) - width // 2, int(py) - 44, width, 24)
@@ -595,9 +870,9 @@ class WorldLevelBase(Scene):
 
     def _draw_storm(self, screen: pygame.Surface, camera: tuple[int, int]) -> None:
         """Dust storm: the world is fully hidden outside the visibility circle."""
-        radius = self.visibility_radius
-        px = int(self.player.pos.x - camera[0])
-        py = int(self.player.pos.y)
+        radius = int(self.visibility_radius * self.zoom)
+        px = int((self.player.pos.x - camera[0]) * self.zoom)
+        py = int((self.player.pos.y - camera[1]) * self.zoom)
         overlay = pygame.Surface((settings.WIDTH, settings.HEIGHT), pygame.SRCALPHA)
         overlay.fill((172, 112, 62, 255))
         cut = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)

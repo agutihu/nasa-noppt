@@ -132,7 +132,7 @@ class Turret:
 
 
 class Projectile:
-    """Enemy bolt: straight line, dies on leaving bounds or hitting the player."""
+    """Enemy bolt: straight line, dies on leaving bounds, hitting terrain, or the player."""
 
     def __init__(self, pos, direction, speed=170, radius=4, color=None) -> None:
         self.pos = pygame.Vector2(pos)
@@ -140,16 +140,24 @@ class Projectile:
         self.radius = radius
         self.color = color or settings.WARN
         self.dead = False
+        self.impact = False
         self.t = 0.0
         self.rect = pygame.Rect(0, 0, radius * 2, radius * 2)
         self.rect.center = pos
 
-    def update(self, dt: float, bounds: pygame.Rect) -> None:
+    def update(self, dt: float, bounds: pygame.Rect, solids=None) -> None:
         self.pos += self.vel * dt
         self.t += dt
         self.rect.center = (round(self.pos.x), round(self.pos.y))
         if not bounds.contains(self.rect):
             self.dead = True
+            return
+        if solids:
+            for solid in solids:
+                if self.rect.colliderect(solid):
+                    self.dead = True
+                    self.impact = True
+                    return
 
     def draw(self, screen: pygame.Surface, camera: tuple[int, int]) -> None:
         cx = self.rect.centerx - camera[0]
@@ -163,12 +171,16 @@ class Projectile:
 
 
 class Walker:
-    """Ground alien: patrols its home range and charges when the player gets close."""
+    """Ground alien: patrols its home range; turns and gives chase when the
+    player comes close, but gives up beyond its leash distance and walks home."""
 
     def __init__(self, spec: dict, cfg: dict, state, color=(96, 200, 120)) -> None:
         params = cfg.get("params", {})
         self.speed = state.scale_speed(float(params.get("walker_speed", 70)))
         self.charge_speed = state.scale_speed(float(params.get("walker_charge", 135)))
+        self.aggro_x = float(params.get("walker_aggro", 240))
+        self.aggro_y = float(params.get("walker_aggro_y", 90))
+        self.leash = float(params.get("walker_leash", 330))
         self.home = pygame.Vector2(spec["x"], spec["y"])
         self.range = float(spec.get("range", 100))
         self.pos = pygame.Vector2(self.home)
@@ -186,23 +198,24 @@ class Walker:
             self.charging = False
             return
         self.t += dt
-        near = (
-            abs(player.pos.x - self.pos.x) < 240
-            and abs(player.pos.y - self.pos.y) < 90
+        chasing = (
+            abs(player.pos.x - self.pos.x) < self.aggro_x
+            and abs(player.pos.y - self.pos.y) < self.aggro_y
+            and abs(self.pos.x - self.home.x) < self.leash
         )
-        if near:
+        if chasing:
             direction = 1 if player.pos.x > self.pos.x else -1
             self.pos.x += direction * self.charge_speed * dt
             self.facing = direction
             self.charging = True
         else:
+            self.charging = False
             offset = self.pos.x - self.home.x
             if offset > self.range:
                 self.facing = -1
             elif offset < -self.range:
                 self.facing = 1
             self.pos.x += self.facing * self.speed * dt
-            self.charging = False
         self.rect.center = (round(self.pos.x), round(self.pos.y))
 
     def draw(self, screen: pygame.Surface, camera: tuple[int, int]) -> None:
@@ -272,7 +285,8 @@ class UFO:
             self.charge = 0.0
             return None
         distance = math.hypot(player.pos.x - self.pos.x, player.pos.y - self.pos.y)
-        if distance > 460:
+        off_screen = abs(player.pos.x - self.pos.x) > settings.WIDTH * 0.55
+        if distance > 460 or off_screen:
             self.charge = max(0.0, self.charge - dt * 0.8)
             return None
 
@@ -325,8 +339,8 @@ class LaserBolt(Projectile):
         super().__init__(pos, direction, speed, radius=3, color=settings.ACCENT)
         self.life = 0.85
 
-    def update(self, dt: float, bounds: pygame.Rect) -> None:
-        super().update(dt, bounds)
+    def update(self, dt: float, bounds: pygame.Rect, solids=None) -> None:
+        super().update(dt, bounds, solids)
         self.life -= dt
         if self.life <= 0:
             self.dead = True

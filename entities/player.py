@@ -43,6 +43,11 @@ class Player:
     def invulnerable(self) -> bool:
         return self.invuln > 0.0
 
+    @property
+    def hit_rect(self) -> pygame.Rect:
+        """Tighter box for projectiles: a bolt must truly touch the body."""
+        return self.rect.inflate(-10, -8)
+
     def take_damage(self, amount: int = 1, *, flash: float = 1.0) -> bool:
         """Return True when this hit kills the player."""
         if self.dead or self.invulnerable or amount <= 0:
@@ -110,11 +115,11 @@ class Player:
         self.rect.center = (round(self.pos.x), round(self.pos.y))
 
     # --- drawing ------------------------------------------------------------
-    def draw(self, screen: pygame.Surface) -> None:
+    def draw(self, screen: pygame.Surface, camera: tuple[int, int] = (0, 0)) -> None:
         flashing = self.invulnerable and int(self.invuln * 14) % 2 == 0
         sprites.draw_astronaut(
             screen,
-            (round(self.pos.x), round(self.pos.y)),
+            (round(self.pos.x - camera[0]), round(self.pos.y - camera[1])),
             self.t,
             moving=self.moving,
             facing=self.facing,
@@ -198,6 +203,7 @@ class PlatformerPlayer(Player):
                 self.vel.y -= self.gravity * self.hold_boost * dt
 
         self.vel.y += self.gravity * dt
+        self.prev_bottom = self.rect.bottom  # for reliable landings, even at speed
         self.pos += self.vel * dt
 
         if bounds is not None:
@@ -215,19 +221,31 @@ class PlatformerPlayer(Player):
             self.facing = 1 if self.vel.x > 0 else -1
 
     def _resolve_platforms(self, solids) -> None:
+        """Land on tops (even at high fall speed), bump heads, and block sides."""
         was_ground = False
+        prev_bottom = getattr(self, "prev_bottom", self.rect.bottom)
         for solid in solids:
             if not self.rect.colliderect(solid):
                 continue
-            if self.vel.y > 0 and self.rect.bottom - self.vel.y * 0.0 <= solid.top + 18:
+            if self.vel.y >= 0 and prev_bottom <= solid.bottom + 2:
+                # we were above this platform last frame: land on it
                 self.rect.bottom = solid.top
                 self.pos.y = self.rect.centery
                 self.vel.y = 0.0
                 was_ground = True
-            elif self.vel.y < 0 and self.rect.top >= solid.top:
+            elif self.vel.y < 0 and prev_bottom > solid.top:
+                # rising into it: bump the head
                 self.rect.top = solid.bottom
                 self.pos.y = self.rect.centery
                 self.vel.y = 0.0
+            else:
+                # came in from the side: push back out the way we came
+                if self.vel.x > 0 or (self.vel.x == 0 and self.rect.centerx < solid.centerx):
+                    self.rect.right = solid.left
+                else:
+                    self.rect.left = solid.right
+                self.pos.x = self.rect.centerx
+                self.vel.x = 0.0
         self.on_ground = was_ground
 
 
@@ -261,11 +279,11 @@ class CombatPlayer(PlatformerPlayer):
         super().update(dt, keys, bounds, solids)
         self.airborne = not self.on_ground
 
-    def draw(self, screen: pygame.Surface) -> None:
+    def draw(self, screen: pygame.Surface, camera: tuple[int, int] = (0, 0)) -> None:
         flashing = self.invulnerable and int(self.invuln * 14) % 2 == 0
         sprites.draw_astronaut(
             screen,
-            (round(self.pos.x), round(self.pos.y)),
+            (round(self.pos.x - camera[0]), round(self.pos.y - camera[1])),
             self.t,
             moving=self.moving,
             facing=self.facing,

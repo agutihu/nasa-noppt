@@ -44,6 +44,12 @@ class MapScene(Scene):
         self.menu_button = Button(
             (settings.WIDTH - 300, 16, 284, 44), "Back to menu", self._back_to_menu
         )
+        self.profile_button = Button(
+            (settings.WIDTH - 466, 16, 152, 44), "Profile", self._toggle_profile, style="ghost"
+        )
+        self.profile_open = False
+        self.name_buffer = self.state.player_name
+        self.editing_name = False
         self._build_panel()
 
     # --- setup --------------------------------------------------------------
@@ -57,6 +63,24 @@ class MapScene(Scene):
 
     def _back_to_menu(self) -> None:
         self.manager.switch(settings.MENU)
+
+    # --- profile ------------------------------------------------------------
+    def _toggle_profile(self) -> None:
+        self.profile_open = not self.profile_open
+        self.editing_name = False
+        self.name_buffer = self.state.player_name
+        audio.play("click" if self.profile_open else "back")
+
+    def _commit_name(self) -> None:
+        cleaned = self.name_buffer.strip() or "Pilot"
+        self.state.player_name = cleaned[:16]
+        self.state.save()
+        self.name_buffer = self.state.player_name
+
+    def _profile_rect(self) -> pygame.Rect:
+        rect = pygame.Rect(0, 0, 560, 586)
+        rect.center = (settings.WIDTH // 2, settings.HEIGHT // 2 + 6)
+        return rect
 
     # --- selection ----------------------------------------------------------
     def _find_at(self, pos: tuple[int, int]):
@@ -199,16 +223,56 @@ class MapScene(Scene):
         for event in events:
             if event.type == pygame.MOUSEMOTION:
                 self.mouse = event.pos
+
+        if self.profile_open:
+            for event in events:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        if self.editing_name:
+                            self.editing_name = False
+                            self.name_buffer = self.state.player_name
+                        else:
+                            self.profile_open = False
+                        audio.play("back")
+                    elif event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
+                        self.editing_name = False
+                        self._commit_name()
+                        audio.play("click")
+                    elif event.key == pygame.K_BACKSPACE:
+                        self.name_buffer = self.name_buffer[:-1]
+                    else:
+                        glyph = getattr(event, "unicode", "") or ""
+                        if glyph and len(self.name_buffer) < 16 and glyph.isprintable():
+                            self.name_buffer += glyph
+                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    if self._profile_rect().collidepoint(event.pos):
+                        name_row = pygame.Rect(0, 0, 420, 44)
+                        name_row.midtop = (settings.WIDTH // 2, self._profile_rect().top + 92)
+                        self.editing_name = name_row.collidepoint(event.pos)
+                        if self.editing_name:
+                            audio.play("click")
+                    else:
+                        self.profile_open = False
+                        self.editing_name = False
+                        self._commit_name()
+                        audio.play("back")
+            return
+
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.manager.switch(settings.MENU)
+                    return
+                if event.key == pygame.K_p:
+                    self._toggle_profile()
                     return
                 if event.key in (pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_SPACE):
                     self._launch_selected()
                     return
 
         if self.menu_button.handle_events(events):
+            return
+        if self.profile_button.handle_events(events):
             return
         for button in self.panel_buttons:
             if button.handle_events(events):
@@ -265,12 +329,15 @@ class MapScene(Scene):
         self._draw_planets(screen)
         self._draw_status_bar(screen)
         self.menu_button.draw(screen)
+        self.profile_button.draw(screen)
         self._draw_panel(screen)
 
         for button in self.panel_buttons:
             button.draw(screen)
 
         self._draw_toast(screen)
+        if self.profile_open:
+            self._draw_profile(screen)
         screen.blit(self.vignette, (0, 0))
 
     def _draw_orbits(self, screen: pygame.Surface, sun_pos: tuple[int, int]) -> None:
@@ -497,6 +564,90 @@ class MapScene(Scene):
                 screen, "Not recoverable on a flyby", (x, part_row_cy), 15,
                 settings.DIM, middle=True, shadow=False,
             )
+
+    def _draw_profile(self, screen: pygame.Surface) -> None:
+        """Pilot profile: set a name and see every part and where it came from."""
+        panel = self._profile_rect()
+        pygame.draw.rect(screen, settings.PANEL, panel, border_radius=16)
+        pygame.draw.rect(screen, settings.ACCENT, panel, 2, border_radius=16)
+
+        x = panel.x + 40
+        text.draw(screen, "PILOT PROFILE", (x, panel.y + 24), 20, settings.ACCENT, display=True, shadow=False)
+        text.draw(
+            screen, "P / Esc to close", (panel.right - 40, panel.y + 28), 14,
+            settings.FAINT, right=True, shadow=False,
+        )
+        pygame.draw.line(screen, settings.PANEL_EDGE, (x, panel.y + 58), (panel.right - 40, panel.y + 58), 1)
+
+        # --- name row -----------------------------------------------------
+        name_rect = pygame.Rect(0, 0, 420, 44)
+        name_rect.midtop = (panel.centerx, panel.y + 92)
+        editing = self.editing_name
+        pygame.draw.rect(screen, (8, 14, 26), name_rect, border_radius=10)
+        pygame.draw.rect(
+            screen,
+            settings.ACCENT if editing else settings.PANEL_EDGE,
+            name_rect, 2, border_radius=10,
+        )
+        shown = self.name_buffer + ("|" if editing and (pygame.time.get_ticks() // 380) % 2 == 0 else "")
+        text.draw(
+            screen, shown or "Pilot", (name_rect.x + 16, name_rect.centery), 20,
+            settings.INK, middle=True, shadow=False,
+        )
+        text.draw(screen, "NAME", (x, name_rect.centery), 14, settings.DIM, shadow=False)
+        hint = "type to rename  ·  Enter to save" if editing else "click the name to edit"
+        text.draw(
+            screen, hint, (panel.centerx, panel.y + 148), 14, settings.FAINT,
+            center=True, shadow=False,
+        )
+
+        # --- collected parts ----------------------------------------------
+        y = panel.y + 182
+        text.draw(screen, "PARTS RECOVERED", (x, y), 14, settings.ACCENT, shadow=False)
+        text.draw(
+            screen,
+            f"{self.state.part_count}/{len(self.state.required_parts())}",
+            (panel.right - 40, y), 14, settings.DIM, right=True, shadow=False,
+        )
+        y += 30
+        by_part = {p.get("part"): p for p in self.planets if p.get("part")}
+        for part in self.state.required_parts():
+            planet = by_part.get(part)
+            world = planet["name"] if planet else "?"
+            pcolor = hex_to_rgb(planet.get("part_color", planet.get("color", "#8fa3c8"))) if planet else settings.ACCENT
+            owned = self.state.has_part(part)
+            best = self.state.best_time(planet["id"]) if planet else None
+            center = (x + 12, y + 12)
+            if owned:
+                sprites.draw_part(screen, center, 10, pcolor, self.t, glow=False)
+            else:
+                pygame.draw.circle(screen, settings.PANEL_EDGE, center, 10, 1)
+                pygame.draw.circle(screen, (20, 30, 48), center, 8)
+            text.draw(screen, part, (x + 34, y + 2), 16, settings.INK if owned else settings.DIM, shadow=False)
+            sub = f"found in {world}"
+            if owned and best is not None:
+                minutes = int(best // 60)
+                seconds = int(best % 60)
+                sub += f"  ·  best {minutes:01d}:{seconds:02d}"
+            text.draw(
+                screen, sub if owned else f"not recovered yet — {world}",
+                (x + 34, y + 20), 13, settings.DIM if owned else settings.FAINT, shadow=False,
+            )
+            if owned:
+                text.draw(
+                    screen, "OK", (panel.right - 40, y + 12), 15, settings.GREEN,
+                    right=True, middle=True, shadow=False,
+                )
+            y += 44
+
+        # --- footer stats ---------------------------------------------------
+        y = panel.bottom - 44
+        pygame.draw.line(screen, settings.PANEL_EDGE, (x, y - 24), (panel.right - 40, y - 24), 1)
+        text.draw(
+            screen,
+            self.state.status_line(),
+            (panel.centerx, y), 15, settings.DIM, center=True, shadow=False,
+        )
 
     def _draw_toast(self, screen: pygame.Surface) -> None:
         if not self.toast:

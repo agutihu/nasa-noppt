@@ -194,7 +194,7 @@ class PlatformerPlayer(Player):
         # higher jump while the key is held
         if self.jump_held > 0.0:
             self.jump_held = max(0.0, self.jump_held - dt)
-            if keys[pygame.K_SPACE] or keys[pygame.K_UP] or keys[pygame.K_w]:
+            if keys[pygame.K_SPACE]:
                 self.vel.y -= self.gravity * self.hold_boost * dt
 
         self.vel.y += self.gravity * dt

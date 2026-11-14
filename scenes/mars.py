@@ -165,7 +165,7 @@ class MarsScene(Scene):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.manager.push(settings.PAUSE, parent=self)
-                elif event.key in (pygame.K_SPACE, pygame.K_UP, pygame.K_w):
+                elif event.key == pygame.K_SPACE:
                     self.player.jump()
                 elif event.key == pygame.K_h:
                     self._hint()

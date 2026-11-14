@@ -16,6 +16,42 @@ The full playable arc — tutorial, Mars, Mercury, Venus, Earth finale — is im
 
 Target play time: about 14 minutes, so a judge can see the full arc in one sitting.
 
+## Installation
+
+**Prerequisites:** Python 3.12 (3.11 also works).
+
+```bash
+git clone https://github.com/imamsanghaarc/nasa.git
+cd nasa
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+python main.py
+```
+
+Never install plain `pygame`; use `pygame-ce`.
+
+Optional — cache the NASA Astronomy Picture of the Day for the boot screen:
+
+```bash
+python tools/fetch_apod.py
+```
+
+See [PLAYGUIDE.md](PLAYGUIDE.md) for the full player guide.
+
+## Documentation
+
+- [README.md](README.md) — Main overview of the project
+- [DOCS.md](DOCS.md) — Documentation index and reading order
+- [DESIGN.md](DESIGN.md) — Game design document
+- [TECHNICAL.md](TECHNICAL.md) — Technical reference
+- [PLAYGUIDE.md](PLAYGUIDE.md) — Player guide
+- [TOOLS.md](TOOLS.md) — Tools & testing
+- [SCIENCE.md](SCIENCE.md) — NASA science appendix
+- [DATA.md](DATA.md) — Data & content format reference
+- [HACKATHON.md](HACKATHON.md) — Judges' submission notes
+- [CONTRIBUTING.md](CONTRIBUTING.md) — Contributing guide
+
 ## What this project is
 
 HOMEBOUND is an educational space game made for the NASA Space Apps Challenge 2026 hackathon.

@@ -37,10 +37,3 @@ When gameplay or architecture changes, update the relevant document:
 - Content / JSON schemas → `DATA.md`
 - Everything user-facing → `README.md`
 "
-
-
-
-
-
-
-6112bd43e09c48bd8695813450189005.RUKScx22gpG9Rw11UsUDyav6

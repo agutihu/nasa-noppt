@@ -13,21 +13,22 @@ from core.scene import Scene
 from art import environments
 from ui.dialogue_box import DialogueBox
 
+_MISSION_TO_LEVEL = {
+    "outpost": "level2",
+    "landing": "level3",
+    "surface": "level4",
+    "tunnel": "ending",
+}
 
 class BriefingScene(Scene):
     name = settings.BRIEFING
     counts_time = False
 
     def __init__(self, game) -> None:
-        # Do NOT pass None to Scene.__init__; set placeholders first.
-        # Scene.__init__ will try game.screen, so we need a screen.
-        class _DummyGame:
-            screen: pygame.Surface = pygame.Surface((1, 1))
-            state = None
-            manager = None
-        # But we still need to call super somehow... instead,
-        # set attributes that Scene.__init__ would set, then override.
+        # Store the game reference so we can access the real manager later.
         self.game = game
+        # Minimal placeholders so Scene.__init__ doesn't crash;
+        # we set self.manager properly in on_enter().
         self.screen = pygame.Surface((1, 1))
         self.state = None
         self.manager = None
@@ -41,12 +42,6 @@ class BriefingScene(Scene):
         self.continue_key = False
         # level_id may come from switch(level_id="outpost") or default
         level_id = data.get("level_id", self.level_id)
-        _MISSION_TO_LEVEL = {
-            "outpost": "level1",
-            "landing": "level2",
-            "surface": "level3",
-            "tunnel": "level4",
-        }
         actual_level_id = _MISSION_TO_LEVEL.get(level_id, level_id)
         # load the level config to get name and blurb
         self.cfg = levels.load_level(actual_level_id)
@@ -59,6 +54,13 @@ class BriefingScene(Scene):
             self.dlg.queue(lines, on_done=self._start_done)
         else:
             self._start_done()
+
+        # Set the manager reference so update() can switch scenes.
+        # The test's game object is stored as self.game.
+        if self.game and hasattr(self.game, "manager"):
+            self.manager = self.game.manager
+        elif self.stack and self.stack[-1] and hasattr(self.stack[-1], "manager") and self.stack[-1].manager:
+            self.manager = self.stack[-1].manager
 
     def _start_done(self) -> None:
         self.continue_key = True
@@ -75,20 +77,26 @@ class BriefingScene(Scene):
         self.t += dt
         if self.continue_key:
             audio.play("click")
-            # Determine the next level based on sequential unlock
-            order = list(settings.LEVEL_IDS)
-            if self.level_id in order:
-                idx = order.index(self.level_id)
-                next_idx = idx + 1
-                if next_idx < len(order):
-                    self.manager.switch(settings.LEVEL_IDS[next_idx])
-                else:
-                    # All mission levels done → show ending
-                    if hasattr(self.state, "finish_mission") and self.state.outcome is None:
-                        self.state.finish_mission("win")
-                    self.manager.switch(settings.ENDING)
+            # Determine the next level based on sequential unlock.
+            # Use the mission-to-level mapping so we switch to level file names
+            # (e.g. 'outpost' -> 'level1') rather than mission IDs ('landing').
+            next_level = _MISSION_TO_LEVEL.get(self.level_id, self.level_id)
+            if next_level != self.level_id and next_level in settings.PLAYABLE_SCENES:
+                self.manager.switch(next_level)
             else:
-                self.manager.switch(settings.LEVEL1)
+                # Fallback: advance to the next mission ID
+                order = list(settings.LEVEL_IDS)
+                if self.level_id in order:
+                    idx = order.index(self.level_id)
+                    next_idx = idx + 1
+                    if next_idx < len(order):
+                        self.manager.switch(settings.LEVEL_IDS[next_idx])
+                    else:
+                        if hasattr(self.state, "finish_mission") and self.state.outcome is None:
+                            self.state.finish_mission("win")
+                        self.manager.switch(settings.ENDING)
+                else:
+                    self.manager.switch(settings.LEVEL1)
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.blit(environments.outpost_room(settings.WIDTH, settings.HEIGHT), (0, 0))
@@ -141,7 +149,6 @@ def register_mission_scenes(manager: object) -> None:
     from scenes.level2 import Level2Scene
     from scenes.level3 import Level3Scene
     from scenes.level4 import Level4Scene
-    from scenes.briefing import BriefingScene
     from scenes.ending import EndingScene
     manager.register(settings.LEVEL1, Level1Scene)
     manager.register(settings.LEVEL2, Level2Scene)

@@ -1,0 +1,123 @@
+You are working on LAIKA: MARS MISSION, a Python + pygame-ce educational game
+for the NASA Space Apps Challenge 2026 (audience: judges and players aged 10+).
+The game has 4 levels, 14 scenes, fully procedural art, and data under data/.
+Docs: README.md, DOCS.md, design.md, technical.md, playguide.md, SCIENCE.md,
+DATA.md, TOOLS.md, HACKATHON.md, CONTRIBUTING.md, plus the Project Journey .docx.
+
+GOAL: Fix the six issues below professionally. Do not break existing behavior.
+After every group of changes, run the headless smoke test (all 14 scenes must
+still pass). Keep docs and code in sync (see DOCS.md). At the end, give me a
+short change log listing every file touched and why.
+
+---------------------------------------------------------------
+ISSUE 1: SCIENCE ACCURACY
+---------------------------------------------------------------
+- In data/science.json, SCIENCE.md, the briefing dialogue, and the Journey doc,
+  the Mars Trek entry lists "fastest winds >2,000 km/h (Neptune scale)". This is
+  a Neptune fact, not Mars. Remove it from the Mars context. If a wind fact is
+  needed, use a verified Mars figure (Mars storms are fast but the thin
+  atmosphere makes them gentle in force) and say so in kid-friendly language.
+- Re-verify the Mars night low of -125°C. Gale Crater nights are typically
+  warmer; -125°C is closer to polar/extreme conditions. Either correct the
+  value to a sourced Gale Crater figure, or keep -125°C but label it clearly as
+  an extreme/polar-style low, and make the Level 3 text, HUD warning, and
+  science data consistent.
+- Check the other values (radiation ~0.64 mSv/day on the surface, bone loss
+  ~1-1.5%/month) and make sure each is labeled with its correct context
+  (surface vs transit, microgravity vs Mars gravity).
+- Do NOT invent numbers. Verify against NASA sources (RAD/MSL, DONKI, OSDR,
+  Mars Trek) and add the source and verification date next to each value in
+  SCIENCE.md. If you cannot verify a value, flag it for me instead of guessing.
+- Keep tools/fetch_science.py and the cached data/science.json schema working.
+
+---------------------------------------------------------------
+ISSUE 2: PLAYTIME DOES NOT MATCH THE 25-30 MINUTE TARGET
+---------------------------------------------------------------
+- Audit the real playtime per level (timers, dialogue, briefings, cutscenes).
+  Current mechanics: L1 has a 22s bike QTE; L3 has a 5 min countdown; L4 is
+  ~4 min with a 2 min victory sequence (only ~2 min of real gameplay).
+- Report the realistic total at Normal difficulty.
+- Then choose ONE approach and apply it consistently everywhere:
+  (a) update the stated target to the real figure, or
+  (b) add meaningful content to reach ~25-30 min (e.g. extend Level 4 platforming
+      so real play is closer to 4 min, add a short science mini-briefing between
+      levels, or add an optional bonus objective), without padding.
+- Prefer (b) only if it can be done cleanly; otherwise do (a).
+- Update README.md, design.md, playguide.md, HACKATHON.md, and the Journey doc so
+  the playtime claim is identical in all places. Re-check that Easy (+25% time)
+  and Hard (-15% time) still behave correctly.
+
+---------------------------------------------------------------
+ISSUE 3: FAILURE HANDLING IS TOO HARSH AND INCONSISTENT
+---------------------------------------------------------------
+- Currently a wrong food choice in Level 1 restarts the entire mission, while
+  all other mistakes only retry the task. This is inconsistent and frustrating
+  for ages 10+.
+- Change the food mistake to: show the "FOOD SAFETY PROTOCOL VIOLATED" message,
+  explain WHY the choice was unsafe (teach, don't just punish), then let the
+  player retry only the food task. Optionally cost one heart or add a hint on
+  Easy.
+- Keep real catastrophic failures (sandstorm ignored, rover destroyed, forgot
+  Hibernation) as game over/retry as designed.
+- Make the rule uniform: mistake -> explanation -> retry the specific challenge;
+  catastrophic -> game over with a clear lesson.
+- Update level1.json/data, dialogue, save logic if affected, and the Fail
+  handling text in design.md, playguide.md, technical.md, and the Journey doc.
+  Confirm all difficulty modes still work.
+
+---------------------------------------------------------------
+ISSUE 4: REMOVE INTERNAL NOTES FROM JUDGE-FACING DOCS
+---------------------------------------------------------------
+- Search every doc (and the .docx) for internal or to-do text such as "Send to
+  Vicky for last checkup (the Word document you requested)", TODOs, and draft
+  remarks. Remove or rewrite them into professional wording.
+- Next Steps should read as a project roadmap, not as personal reminders.
+
+---------------------------------------------------------------
+ISSUE 5: FORMATTING AND CONSISTENCY FIXES
+---------------------------------------------------------------
+- Technical Summary: fix the missing separators/labels ("Scenes14 total",
+  "MovementWalker", "UIDialogue box", "Save SystemVERSION 2", "DifficultyEasy",
+  "Fail handlingFood", "Dependenciespygame-ce"). Make it a clean two-column
+  table (Item | Detail).
+- Level 2 is called "Preparing for the Mission" in one place and "Landing" in
+  another. Pick one name and use it in code, data JSON, docs, map labels, and
+  the Journey doc.
+- "Seven parts from planets.json" is unexplained: either explain it in DATA.md
+  and the Journey doc, or reword it.
+- APOD is listed in the docs and DATA.md but is not described in the game
+  loop. Either document exactly where APOD appears in gameplay, or remove the
+  stale references.
+- Contact section: replace the placeholder with real fields (team name, member
+  names/roles, email or repo link). Leave clearly marked placeholders for me to
+  fill if you don't know them.
+- Check for other inconsistencies in numbers, names, keybinds (E, H, F), and
+  timings across all docs and the game.
+
+---------------------------------------------------------------
+ISSUE 6: MISSING HACKATHON-FACING CONTENT
+---------------------------------------------------------------
+Add to HACKATHON.md and the Journey doc, in a professional tone:
+- A short story/emotional hook: why Laika, why a junior astronaut trainer.
+- Learning outcomes: 3-5 concrete things a player learns (radiation safety,
+  bone/muscle loss and exercise, CO2 and rest, EDL sequence, sandstorms and
+  extreme cold).
+- A "How this maps to NASA data" paragraph (RADLAB/DONKI, OSDR, Mars Trek).
+- An impact statement (who benefits, why a game is the right format).
+- A "Future work" section (ending polish, web build with pygbag, more levels).
+- Screenshot placeholders with captions (use the existing screenshot tool in
+  TOOLS.md to generate them if possible).
+
+---------------------------------------------------------------
+DELIVERABLES
+---------------------------------------------------------------
+1. All code, data, and doc fixes applied.
+2. Updated Project Journey .docx (same structure, professional formatting,
+   no internal notes, a clean Technical Summary table, consistent names).
+3. Smoke test output showing all 14 scenes pass.
+4. A change log, plus a list of anything you could not verify or need me to
+   decide (especially science values and the playtime approach).
+
+Rules: no invented science facts, no breaking changes to saves (bump
+SAVE VERSION and add migration if the schema changes), keep pygame-ce as the
+only dependency, and keep everything working offline.

@@ -11,6 +11,13 @@
   ],
   "params": {
     "seed": 31,
+    "moment": {
+      "at": 0.55,
+      "duration": 6.0,
+      "wave": 2,
+      "burst_every": 3.0,
+      "title": "DEEP TRENCH"
+    },
     "world_length": 6200,
     "ground_y": 560,
     "gravity_px": 1020,

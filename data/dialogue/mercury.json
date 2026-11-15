@@ -3,6 +3,7 @@
   "lines": [
     { "trigger": "start", "text": "Mercury. Dayside hits about 430 degrees Celsius; nightside falls to minus 180. Almost no atmosphere to hold the heat." },
     { "trigger": "start", "text": "Heat vents and falling rocks ahead. Tap E to fire the blaster, and jump on anything that crawls too close." },
+    { "trigger": "moment", "text": "Every heat vent on the ridge is firing at once. This is the worst of the day side - push through it." },
     { "trigger": "part", "text": "Solar Panel Array secured. The return pod is primed - get to the ship." },
     { "trigger": "win", "text": "Panel stowed. Mercury's solar output is unreal - this alone could run our whole ship." },
     { "trigger": "hint", "text": "Heat vents erupt in a rhythm. Watch the pulse, then run through." },

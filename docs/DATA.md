@@ -73,6 +73,39 @@ Each level JSON has these keys:
 | `flashlight_on` | bool | Whether flashlight starts on (Level 4) |
 | `total_time` | int | Total time limit in seconds (Level 4) |
 
+### World Params (data/levels/<planet>.json)
+
+The seven mission planets run the shared world engine. Their `params` block holds:
+
+| Key | Type | Description |
+|-----|------|-----------|
+| `seed` | int | World generator seed (terrain, hazards, enemies) |
+| `world_length` | int | World width in pixels |
+| `ground_y` | int | Height of the ground surface |
+| `gravity_px`, `jump_speed`, `move_speed`, `friction` | float | Movement feel |
+| `walker_speed`, `walker_charge`, `ufo_speed`, `ufo_fire_interval`, `plasma_speed` | float | Enemy behaviour |
+| `gap_chance`, `gap_min`, `gap_max`, `platform_chance` | float | Terrain generation |
+| `enemy_density`, `ufo_chance`, `hazard_density`, `hazard_types` | - | Spawn mix |
+| `theme` | object | Colours, backdrop and fog style |
+| `weather` | object | Weather type, density, colour |
+| `storm_interval`, `storm_duration`, `visibility_radius` | float | Mars dust storm |
+| `moment` | object | The world's signature moment (below) |
+| `difficulty` | object | Per-difficulty overrides (`easy` / `normal` / `hard`) |
+
+**Signature moment** - one scripted set piece per world. It fires when the player
+reaches `at` (a fraction of the world width), raises an alert, shows the `title`,
+and sends `wave` enemies every `burst_every` seconds until `duration` runs out.
+
+```json
+"moment": {
+  "at": 0.55,
+  "duration": 6.0,
+  "wave": 2,
+  "burst_every": 3.0,
+  "title": "HEAT VENT SURGE"
+}
+```
+
 ### Dialogue (data/dialogue/*.json)
 
 ```json
@@ -98,6 +131,9 @@ Each level JSON has these keys:
 ```
 
 **Line structure**: `{"speaker": "Laika", "text": "..."}`. Speaker can be overridden per line.
+
+**Triggers**: `start`, `hint`, `part`, `win`, `death_3`, `storm` and `moment`
+(`moment` is the line Laika says when a world's signature moment fires).
 
 ### Mission (data/mission.json)
 

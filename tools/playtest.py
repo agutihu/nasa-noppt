@@ -28,7 +28,7 @@ from scenes.tutorial import TutorialScene  # noqa: E402
 from scenes.world_level import make_world_scene  # noqa: E402
 from ui.pause import PauseScene  # noqa: E402
 
-WORLD_PLANETS = ("mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune")
+WORLD_PLANETS = settings.PLANET_SCENES
 
 
 class FakeKeys:
@@ -75,7 +75,7 @@ def main() -> int:
     pygame.key.get_pressed = lambda: keys
 
     state = GameState()
-    state.reset()
+    state.reset_mission()
     game = Game(virtual, window, state)
     registry = {
         settings.TUTORIAL: TutorialScene,
@@ -154,6 +154,25 @@ def main() -> int:
         scene.player.vel.y = 0.0
         scene.player.on_ground = True
 
+    # --- the world's signature moment: one scripted set piece per world -------
+    check("mercury: level defines a signature moment", bool(scene.moment_cfg))
+    scene.moment_cfg = {
+        "at": 0.5,
+        "duration": 6.0,
+        "wave": 2,
+        "burst_every": 1.5,
+        "title": "Alert",
+    }
+    scene.moment_x = int(scene.world_w * 0.5)
+    scene.moment_fired = False
+    enemies_before = len(scene.walkers) + len(scene.ufos)
+    scene.player.pos.x = scene.moment_x + 20
+    scene.player.rect.centerx = int(scene.player.pos.x)
+    advance(game, 3)
+    check("moment: set piece fires", scene.moment_fired)
+    check("moment: reinforcements spawn", len(scene.walkers) + len(scene.ufos) > enemies_before)
+    check("moment: alert flash shows", scene.moment_flash > 0.0)
+
     scene._test_complete()
     check("mercury: part collected", state.has_part("Solar Panel Array"))
     check("mercury: level marked done", state.is_level_done("mercury"))
@@ -186,19 +205,26 @@ def main() -> int:
     check("map: finale unlocked with all parts", state.is_unlocked(earth))
     check("map: 7/7 parts", state.part_count == 7)
 
-    # --- ending: assemble and launch ----------------------------------------
+    # --- ending: the finale reports the mission outcome -----------------------
     game.manager.switch(settings.ENDING)
     scene = game.manager.current
-    check("ending: entered assembly", scene.phase == "assemble")
-    check("ending: seven sockets", len(scene.socket_positions) == 7)
-    for index, part in enumerate(scene.required):
-        scene._place(part, index)
-        skip_dialogue(game, 4)
-    check("ending: all parts placed", len(scene.placed) == len(scene.required))
-    scene._launch()
-    advance(game, 10)
-    check("ending: stats screen shown", scene.phase == "stats")
+    advance(game, 5)
+    check("ending: state bound to the scene", scene.state is state)
+    check("ending: seven parts required", len(state.required_parts()) == 7)
+    check("ending: win with every part recovered", scene.outcome == "win")
     check("ending: best time recorded", bool(state.best_times))
+
+    kept_parts = list(state.inventory)
+    state.inventory = kept_parts[:3]
+    game.manager.switch(settings.ENDING)
+    scene = game.manager.current
+    check("ending: incomplete with partial parts", scene.outcome == "incomplete")
+
+    state.inventory = []
+    game.manager.switch(settings.ENDING)
+    scene = game.manager.current
+    check("ending: lost with no parts", scene.outcome == "lost")
+    state.inventory = kept_parts
 
     print()
     if failures:

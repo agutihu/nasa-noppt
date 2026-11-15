@@ -11,6 +11,13 @@
   ],
   "params": {
     "seed": 7,
+    "moment": {
+      "at": 0.55,
+      "duration": 6.0,
+      "wave": 2,
+      "burst_every": 3.0,
+      "title": "ACID RAIN SURGE"
+    },
     "world_length": 5000,
     "ground_y": 560,
     "gravity_px": 980,

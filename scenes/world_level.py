@@ -59,6 +59,7 @@ class WorldLevelBase(Scene):
         self.gen = world_gen.generate(self.level_id, self.params, self.state.difficulty)
         self.world_w = self.gen["world_w"]
         self.world_h = self.gen["world_h"]
+        self.ground_y = int(self.gen.get("ground_y", self.world_h))
         self.world_rect = pygame.Rect(0, 0, self.world_w, self.world_h + 300)
         # closer camera: the world is rendered at this zoom, then scaled to the window
         self.zoom = max(1.0, float(self.params.get("zoom", 1.28)))
@@ -238,6 +239,56 @@ class WorldLevelBase(Scene):
                 self.storm_hinted = False
                 self._storm_line()
 
+    # --- signature moment ---------------------------------------------------
+    def _update_moment(self, dt: float) -> None:
+        """One scripted set piece per world, configured in ``params.moment``.
+
+        Fires once the player reaches ``at`` (a fraction of the world width),
+        then keeps sending short waves until ``duration`` runs out.
+        """
+        if not self.moment_cfg:
+            return
+
+        if not self.moment_fired:
+            if self.player.pos.x < self.moment_x:
+                return
+            self.moment_fired = True
+            self.moment_left = float(self.moment_cfg.get("duration", 8.0))
+            self._moment_burst_timer = float(self.moment_cfg.get("burst_every", 2.0))
+            self.moment_flash = 1.0
+            self._toast(str(self.moment_cfg.get("title", "CONTACT!")).upper())
+            lines = self.dialogue["lines"].get("moment", [])
+            if lines:
+                self.dlg.hint(lines[0])
+            self._spawn_moment_wave()
+            return
+
+        if self.moment_left <= 0:
+            return
+        self.moment_left -= dt
+        self._moment_burst_timer -= dt
+        if self._moment_burst_timer <= 0:
+            self._moment_burst_timer = float(self.moment_cfg.get("burst_every", 2.0))
+            self._spawn_moment_wave()
+
+    def _spawn_moment_wave(self) -> None:
+        """Reinforcements for the set piece: walkers on the ground, saucers above."""
+        if not self.moment_cfg:
+            return
+        count = max(1, int(self.moment_cfg.get("wave", 2)))
+        ufo_color = self.theme.get("ufo_color", (150, 170, 200))
+        for index in range(count):
+            side = 1 if index % 2 == 0 else -1
+            x = int(self.player.pos.x + side * (420 + index * 170))
+            x = max(60, min(x, self.world_w - 60))
+            ground = min(self._ground_top_at(x), self.ground_y)
+            if index % 2 == 0:
+                spec = {"type": "walker", "x": x, "y": ground - 16, "range": 100}
+                self.walkers.append(Walker(spec, self.cfg, self.state, color=self.alien_color))
+            else:
+                spec = {"type": "ufo", "x": x, "y": ground - 170, "range": 130}
+                self.ufos.append(UFO(spec, self.cfg, self.state, color=ufo_color))
+
     # --- input --------------------------------------------------------------
     def handle_events(self, events: list[pygame.event.Event]) -> None:
         if self.phase == "failed":
@@ -285,6 +336,7 @@ class WorldLevelBase(Scene):
     # --- update -------------------------------------------------------------
     def update(self, dt: float) -> None:
         self.t += dt
+        self.moment_flash = max(0.0, self.moment_flash - dt * 1.5)
         if self.phase == "failed":
             self.toast_timer = max(0.0, self.toast_timer - dt)
             self.hud.update(dt)
@@ -600,6 +652,7 @@ class WorldLevelBase(Scene):
 
         self.hud.draw(screen)
         self._draw_toast(screen)
+        self._draw_moment_flash(screen)
         self._draw_minimap(screen)
         self._draw_stopwatch(screen)
         self.dlg.draw(screen)
@@ -895,6 +948,23 @@ class WorldLevelBase(Scene):
             )
 
     # --- minimap / stopwatch ------------------------------------------------
+    def _draw_moment_flash(self, screen: pygame.Surface) -> None:
+        """Red alert wash when the world's signature moment kicks in."""
+        if self.moment_flash <= 0.0:
+            return
+        alpha = int(120 * min(1.0, self.moment_flash))
+        veil = pygame.Surface((settings.WIDTH, settings.HEIGHT), pygame.SRCALPHA)
+        veil.fill((255, 70, 60, alpha))
+        screen.blit(veil, (0, 0))
+        if self.moment_flash > 0.55:
+            label = "ALERT"
+            width = text.measure(label, 22)[0] + 26
+            rect = pygame.Rect(0, 0, width, 32)
+            rect.midtop = (settings.WIDTH // 2, 108)
+            pygame.draw.rect(screen, (6, 11, 24), rect, border_radius=16)
+            pygame.draw.rect(screen, settings.DANGER, rect, 1, border_radius=16)
+            text.draw(screen, label, (rect.centerx, rect.centery), 22, settings.DANGER, center=True, middle=True, shadow=False)
+
     def _draw_minimap(self, screen: pygame.Surface) -> None:
         radius = 62
         diameter = radius * 2

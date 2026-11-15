@@ -25,7 +25,7 @@ from ui.pause import PauseScene  # noqa: E402
 OUT = Path(__file__).resolve().parent / "shots"
 OUT.mkdir(exist_ok=True)
 
-WORLD_PLANETS = ("mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune")
+WORLD_PLANETS = settings.PLANET_SCENES
 
 
 def advance(game: Game, frames: int) -> None:
@@ -51,7 +51,7 @@ def main() -> int:
 
     state = GameState()
     state.tutorial_done = True
-    state.parts = ["Solar Panel Array"]
+    state.add_part("Solar Panel Array")
     game = Game(window, window, state)
 
     registry = {

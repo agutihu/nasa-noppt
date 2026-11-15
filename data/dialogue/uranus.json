@@ -3,6 +3,7 @@
   "lines": [
     { "trigger": "start", "text": "Uranus. It rotates on its side, so this whole season is forty-two years of shadow. Methane snow is falling - light as frost, cold as space." },
     { "trigger": "start", "text": "Slippery ground, cryo geysers, and scouts on saucers. The Thermal Regulator is the warmest thing for a billion kilometres." },
+    { "trigger": "moment", "text": "Methane storm. The temperature is dropping with every gust - do not linger." },
     { "trigger": "part", "text": "Thermal Regulator recovered. We will not freeze on the ride home now." },
     { "trigger": "win", "text": "Regulator stowed. Minus 195 degrees out here - that is a real number, not a feeling." },
     { "trigger": "hint", "text": "Geysers freeze-fast and thaw-slow. Move when the steam dies down." },

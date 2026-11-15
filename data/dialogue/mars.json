@@ -4,6 +4,7 @@
     { "trigger": "start", "text": "You are on Mars. Gravity here is 3.71 metres per second squared - about 38 percent of Earth. Hold jump longer to go higher." },
     { "trigger": "start", "text": "Dust devils and alien patrols ahead. The low gravity makes leaps float - use it." },
     { "trigger": "storm", "text": "Dust storm rolling in. Visibility is dropping. Keep moving toward the light." },
+    { "trigger": "moment", "text": "Dust front rolling in from the west. Visibility is about to drop hard - keep moving toward the light." },
     { "trigger": "part", "text": "Navigation Module recovered. Now we can find our way home." },
     { "trigger": "win", "text": "Module stowed. That is one third of the flight computer - keep it safe." },
     { "trigger": "hint", "text": "Long jumps need speed - run before you leap." },

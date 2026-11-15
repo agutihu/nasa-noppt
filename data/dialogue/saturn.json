@@ -3,6 +3,7 @@
   "lines": [
     { "trigger": "start", "text": "Saturn. We are inside the rings - billions of ice chunks, from grains to house-sized blocks. The ground is ice and it is slick." },
     { "trigger": "start", "text": "Ice falls from the ring plane. Watch the shadows above you, and skate carefully - you will not stop on a dime." },
+    { "trigger": "moment", "text": "Ring debris is coming down. Watch the shadows, astronaut, and skate clear." },
     { "trigger": "part", "text": "Fuel Cells recovered. That is power for the whole trip home." },
     { "trigger": "win", "text": "Cells stowed. The rings are mostly water ice - and yes, extremely thin for their width." },
     { "trigger": "hint", "text": "The ground is ice: start slowing long before you need to stop." },

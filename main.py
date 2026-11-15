@@ -28,7 +28,7 @@ from scenes.level4 import Level4Scene
 from ui.pause import PauseScene
 
 # every mission planet runs the shared world engine; each is its own scene name
-WORLD_PLANETS = ("mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune")
+WORLD_PLANETS = settings.PLANET_SCENES
 
 
 def _enable_dpi_awareness() -> None:

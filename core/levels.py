@@ -8,11 +8,23 @@ bad edit produces a readable error instead of a traceback in the middle of a fra
 from __future__ import annotations
 
 import json
+from functools import lru_cache
 from pathlib import Path
 
 from core import settings
 
 LEVEL_KEYS = ("id", "name", "dialogue", "params", "objective")
+
+#: The playable mission planets, in campaign order (the finale comes after them).
+PLANET_ORDER = (
+    "mercury",
+    "venus",
+    "mars",
+    "jupiter",
+    "saturn",
+    "uranus",
+    "neptune",
+)
 
 
 class DataError(ValueError):
@@ -164,6 +176,25 @@ def load_planets() -> dict:
     return config
 
 
+def planet_index() -> dict[str, dict]:
+    """Map planet id -> planet definition (``data/planets.json``)."""
+    return {planet["id"]: planet for planet in load_planets()["planets"]}
+
+
+@lru_cache(maxsize=1)
+def _required_parts_cached() -> tuple[str, ...]:
+    try:
+        planets = load_planets()["planets"]
+    except DataError:
+        return ()
+    return tuple(planet["part"] for planet in planets if planet.get("part"))
+
+
+def required_parts() -> list[str]:
+    """The parts the player has to recover - one per playable planet."""
+    return list(_required_parts_cached())
+
+
 def level_names() -> dict[str, str]:
     return {entry["id"]: entry["name"] for entry in level_list()}
 
@@ -172,9 +203,8 @@ def previous_mission(planet_id: str) -> str | None:
     """Get the previous mission planet id in the world order.
     Returns None for the first planet (tutorial).
     """
-    order = ("mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune")
-    if planet_id in order:
-        idx = order.index(planet_id)
+    if planet_id in PLANET_ORDER:
+        idx = PLANET_ORDER.index(planet_id)
         if idx > 0:
-            return order[idx - 1]
+            return PLANET_ORDER[idx - 1]
     return None

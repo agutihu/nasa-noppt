@@ -8,8 +8,11 @@ Compact instructions for the HOMEBOUND repository (NASA Space Apps 2026 game).
 |-------|-----|----------------|
 | `register_mission_scenes` not importable from `core.levels` | Import from `scenes.briefing` in `main.py` | Game crashes on launch with `NameError` |
 | `tutorial_done` attribute missing from `GameState` | Add `tutorial_done: bool = False` | Planets stay locked after tutorial win |
-| `is_unlocked()` only checks `LEVEL_IDS` sequence | Also check `self.tutorial_done` for non-LEVEL_IDS planets | Map planets remain locked after completing tutorial |
-| `has_part()` method missing from `GameState` | Add `has_part(self, part_id)` method | Inventory/part checking fails |
+| `is_unlocked()` only checks `LEVEL_IDS` sequence | Accept a planet dict **or** a planet id and use the planet chain (`levels.PLANET_ORDER`) | Map planets unlock in the wrong order / not at all |
+| `has_part()` / `add_part()` methods missing from `GameState` | Add both (parts live in `inventory`) | Part pickup and checks fail |
+| `required_parts()` returned the *collected* parts | Return the seven names from `data/planets.json` | HUD shows "PARTS 0/0"; the finale unlocks too early |
+| `_update_moment()` called but never defined in `scenes/world_level.py` | Implement it (config: `params.moment`) | **Crash on entering any planet** (`AttributeError`) |
+| `EndingScene` read `state` from `data.get("state")` (never passed) | Fall back to `self.state` from the base `Scene` | Every playthrough ends as "Laika did not return" |
 | Modal dialogue box not closable | Add X button + outside-click close in `ui/modal.py` | Player cannot dismiss failure/warning panels |
 | `previous_mission()` function missing | Add to `core/levels.py` | Level navigation breaks |
 
@@ -51,8 +54,14 @@ Headless tools set `SDL_VIDEODRIVER=dummy` and `SDL_AUDIODRIVER=dummy` internall
 - Missing data/assets/audio/save → graceful fallback, never crash
 - Required parts for ending: the seven names in `data/planets.json`
   (Solar Panel Array, Hull Plating, Navigation Module, Shield Generator, Fuel Cells, Thermal Regulator, Signal Antenna)
-- `is_unlocked(level_id)`: index 0 always unlocked; others require previous level in `self.levels_done`
-  **Exception**: tutorial-level planet unlocks also require `self.tutorial_done`
+- `is_unlocked(x)` accepts a planet dict (`data/planets.json`) **or** a plain id:
+  - planet dict → honour its `unlock` rules (`tutorial_done`, `all_parts`) + the chain
+  - planet id → `mercury` needs `tutorial_done`; every other planet needs the previous one in `self.levels_done`
+  - legacy level ids → old `LEVEL_IDS` order (index 0 always unlocked)
+- `required_parts()` = the seven part names from `data/planets.json`; `all_parts()` compares against that list
+- `state.add_part(name)` / `state.has_part(name)` — parts are stored in `inventory`
+- Every world has one scripted set piece: `params.moment` in `data/levels/<planet>.json`
+  (fired by `_update_moment()` in `scenes/world_level.py`)
 - Modal close: X button in top-right + outside-click closes; do not rely on clicking "empty space"
 - `tutorial_done` must be set to `True` when tutorial completes (in `tutorial.py:_win_done`)
 - `previous_mission(planet_id)`: supports navigation back through the campaign

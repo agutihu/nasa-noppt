@@ -77,6 +77,16 @@ PAUSE = "pause"
 # --- playable scenes (for docs / quick reference) ---
 PLAYABLE_SCENES = ("tutorial", "level1", "level2", "level3", "level4", "ending")
 
+# --- mission planets (each one runs the shared world engine) ----------------
+MERCURY = "mercury"
+VENUS = "venus"
+MARS = "mars"
+JUPITER = "jupiter"
+SATURN = "saturn"
+URANUS = "uranus"
+NEPTUNE = "neptune"
+PLANET_SCENES = (MERCURY, VENUS, MARS, JUPITER, SATURN, URANUS, NEPTUNE)
+
 # --- campaign ---------------------------------------------------------------
 LEVEL_IDS = ("outpost", "landing", "surface", "tunnel")
 LEVEL_SCENES = {

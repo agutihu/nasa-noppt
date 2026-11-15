@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 import pygame
 
-from core import audio, settings, text
+from core import audio, levels, settings, text
 from core.scene import Scene
 from ui.button import Button
 from ui.dialogue_box import DialogueBox
@@ -19,8 +19,19 @@ def _fmt_time(seconds: float) -> str:
 def hex_to_rgb(h: str) -> tuple[int, int, int]:
     """Convert '#rrggbb' to (r, g, b)."""
     return tuple(int(h[i:i+2], 16) for i in (1, 3, 5))
-    seconds = int(seconds)
-    return f"{seconds // 60:02d}:{seconds % 60:02d}"
+
+
+def _mission_names() -> dict[str, str]:
+    """Level id -> readable name, for the best-times line."""
+    names: dict[str, str] = {}
+    try:
+        for planet in levels.load_planets()["planets"]:
+            names[planet["id"]] = planet.get("name", planet["id"])
+    except Exception:  # noqa: BLE001 - data files are optional here
+        pass
+    for entry in levels.level_list():
+        names.setdefault(entry["id"], entry.get("name", entry["id"]))
+    return names
 
 
 class EndingScene(Scene):
@@ -28,17 +39,19 @@ class EndingScene(Scene):
     counts_time = False
 
     def on_enter(self, **data) -> None:
-        self.state = data.get("state")  # passed from main.py
+        # keep the shared state (main.py does not pass it in) unless one is handed over
+        self.state = data.get("state") or self.state
         self.outcome: str | None = getattr(self.state, "outcome", None) or data.get("outcome")
 
         # Determine outcome if not already set
         if not self.outcome:
-            # Check if all levels are done
-            if self.state and self.state.level_count >= len(settings.LEVEL_IDS):
-                # All levels completed → win
+            parts = getattr(self.state, "part_count", 0)
+            required = len(self.state.required_parts()) if self.state else 0
+            if required and parts >= required:
+                # Every part recovered -> win
                 self.outcome = "win"
-            elif getattr(self.state, "deaths", 0) > 0 and self.state.level_count < len(settings.LEVEL_IDS):
-                # Some losses but not all levels → incomplete (Laika returns unfinished)
+            elif parts > 0:
+                # Some parts recovered -> incomplete (Laika returns unfinished)
                 self.outcome = "incomplete"
             else:
                 # Lost: Laika doesn't return
@@ -213,8 +226,8 @@ class EndingScene(Scene):
         rows = [
             ("Mission time", _fmt_time(getattr(self.state, "elapsed", 0.0))),
             ("Losses", str(getattr(self.state, "deaths", 0))),
-            ("Parts recovered", 
-             f"{getattr(self.state, 'part_count', 0)}/{max(1, len(getattr(self.state, 'required_parts', [])))})"),
+            ("Parts recovered",
+             f"{getattr(self.state, 'part_count', 0)}/{max(1, len(self.state.required_parts()))}"),
             ("Facts learned", str(getattr(self.state, "fact_count", 0))),
         ]
         y = 300
@@ -240,11 +253,10 @@ class EndingScene(Scene):
         # Best times
         best_times = getattr(self.state, "best_times", {})
         if best_times:
+            names = _mission_names()
             bests = "  ".join(
-                f"{label} {_fmt_time(time)}"
+                f"{names.get(level_id, level_id)} {_fmt_time(time)}"
                 for level_id, time in sorted(best_times.items())
-                for label in [settings.LEVEL_IDS[i] if i < len(settings.LEVEL_IDS) else level_id]
-                for i in [settings.LEVEL_IDS.index(level_id) if level_id in settings.LEVEL_IDS else -1]
             )
             text.draw(
                 screen,

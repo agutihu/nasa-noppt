@@ -52,6 +52,10 @@ class GameState:
     def has_part(self, part_id: str | None) -> bool:
         return bool(part_id) and part_id in self.inventory
 
+    def add_part(self, part_id: str | None) -> bool:
+        """Record a recovered part; returns True when it was new."""
+        return self.add_item(part_id)
+
     def take_item(self, item_id: str) -> bool:
         if item_id not in self.inventory:
             return False
@@ -91,18 +95,27 @@ class GameState:
         return len(self.inventory)
 
     def required_parts(self) -> list[str]:
+        """The parts the mission needs - one per playable planet."""
+        names = levels.required_parts()
+        if names:
+            return names
         return list(self.inventory)
 
     def all_parts(self) -> bool:
-        """Check if all mission levels are complete."""
-        return self.level_count >= len(settings.LEVEL_IDS)
+        """True when every required part has been recovered."""
+        required = self.required_parts()
+        if not required:
+            return False
+        return self.part_count >= len(required)
 
     # --- difficulty ---------------------------------------------------------
+    def cycle_difficulty(self) -> str:
+        """Step through easy -> normal -> hard and return the new difficulty."""
         order = list(settings.DIFFICULTIES)
-        order = list(settings.DIFFICULTIES)
-        index = (order.index(self.difficulty) + 1) % len(order)
+        index = (order.index(self.difficulty) + 1) % len(order) if self.difficulty in order else 0
         self.difficulty = order[index]
         self.save()
+        return self.difficulty
 
     def toggle_text_scale(self) -> float:
         self.text_scale = 1.25 if self.text_scale < 1.2 else 1.0
@@ -132,11 +145,32 @@ class GameState:
     def best_time(self, level_id: str) -> float | None:
         return self.best_times.get(level_id)
 
-    def is_unlocked(self, level_id: str) -> bool:
-        """Sequential campaign: each level opens after the previous one is cleared."""
+    def is_unlocked(self, level_id) -> bool:
+        """Sequential campaign: each mission opens after the previous one is cleared.
+
+        Accepts either a planet definition (``data/planets.json``) or a plain id.
+        The first planet needs the tutorial; every other planet needs the one
+        before it. The finale needs every part.
+        """
+        if isinstance(level_id, dict):
+            planet = level_id
+            rules = planet.get("unlock", []) or []
+            if "tutorial_done" in rules and not self.tutorial_done:
+                return False
+            if "all_parts" in rules and not self.all_parts():
+                return False
+            previous = levels.previous_mission(str(planet.get("id", "")))
+            if previous is not None and not self.is_level_done(previous):
+                return False
+            return True
+
+        level_id = str(level_id)
+        if level_id in levels.PLANET_ORDER:
+            previous = levels.previous_mission(level_id)
+            return self.tutorial_done if previous is None else self.is_level_done(previous)
+
         order = list(settings.LEVEL_IDS)
         if level_id not in order:
-            # Check if this is a tutorial-level planet unlock
             return self.tutorial_done
         index = order.index(level_id)
         return index == 0 or order[index - 1] in self.levels_done

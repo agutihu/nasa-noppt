@@ -11,6 +11,13 @@
   ],
   "params": {
     "seed": 3,
+    "moment": {
+      "at": 0.55,
+      "duration": 6.0,
+      "wave": 2,
+      "burst_every": 3.0,
+      "title": "HEAT VENT SURGE"
+    },
     "world_length": 4600,
     "ground_y": 560,
     "gravity_px": 480,

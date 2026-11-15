@@ -3,6 +3,7 @@
   "lines": [
     { "trigger": "start", "text": "Venus. Surface pressure is ninety-two times Earth, and the ground sits near 465 degrees - hotter than Mercury, even though it is farther from the sun." },
     { "trigger": "start", "text": "It is raining acid. Do not touch the green pools. The saucers love this haze - keep your blaster warm." },
+    { "trigger": "moment", "text": "The acid rain is falling in sheets. Move fast, and never stand in the green pools." },
     { "trigger": "part", "text": "Hull Plating recovered. Watch the acid - the walk back matters as much as the walk in." },
     { "trigger": "win", "text": "Plating stowed. Ninety-two atmospheres out there, and we just walked it." },
     { "trigger": "hint", "text": "Acid pools glow green. Around, never through." },

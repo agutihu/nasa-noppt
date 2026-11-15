@@ -26,7 +26,7 @@ pygame.display.set_mode((settings.WIDTH, settings.HEIGHT))
 screen = pygame.display.get_surface()
 
 state = GameState()
-state.parts = ["Solar Panel Array"]  # 1/3: mix of RECOVERED / READY / LOCKED chips
+state.add_part("Solar Panel Array")  # 1/7: mix of RECOVERED / READY / LOCKED chips
 state.tutorial_done = True
 
 game = Game(screen, screen, state)

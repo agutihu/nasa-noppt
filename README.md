@@ -1,94 +1,197 @@
-# HOMEBOUND
+# LAIKA: MARS MISSION
+## A Junior Astronaut Mission Trainer for NASA Space Apps Challenge 2026
 
-A Junior Astronaut Mission Trainer for NASA Space Apps Challenge 2026.
+[![NASA Space Apps](https://img.shields.io/badge/NASA%20Space%20Apps%20Challenge-2026-blue)](https://spaceapps.challenge.gov/)
+[![Python 3.12](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/)
+[![pygame-ce](https://img.shields.io/badge/pygame--ce-2.5.7-brightgreen)](https://pygbag.github.io/pygame-ce/)
 
-## Overview
+---
 
-Today you are going to help with a really important mission, gathering information about Mars. 
-Your base will be the martian output where you and Laika, a robotic dog, will gather information about invisible solar radiation, solar storms, environmental hazards, and possible signs of life, and take important decisions to secure your safety and from the mission.
+## 🚀 Overview
 
-**Hint:** There is a vending machine with a lot of items the you can take out, to help you during the mission
+**LAIKA: MARS MISSION** is a junior astronaut mission trainer built for the **NASA Space Apps Challenge 2026**. Players guide Laika, a robotic dog, through four survival challenges on the way to Mars. Every mechanic is grounded in real NASA data, teaching players about solar radiation, communication delays, sandstorm survival, and extreme cold operations.
 
-The game consists of a journey to Mars without landing on its surface. Instead, we will send a robotic dog named Laika, whose mission is to collect information about invisible solar radiation, solar storms, environmental hazards, and possible signs of life. Laika will be responsible for gathering this data, while the player must take care of the robot and protect both Laika and the spacecraft from different risks, such as radiation exposure, communication failures, and other potential hazards during the mission.
+**Game Title:** LAIKA: MARS MISSION  
+**Platform:** Windows, macOS, Linux, Web (pygbag)  
+**Python:** 3.12+ (3.11 also works)  
+**Dependencies:** `pygame-ce` (never plain `pygame`)  
+**Play Time:** 25-30 minutes full arc  
+**Difficulties:** Easy (5 hearts, +25% time, frequent hints) · Normal (standard) · Hard (2 hearts, -15% time, hints on request only)  
+**Endings:** Win · Incomplete · Lost
 
-## Game Levels
+---
 
-The game consists of 4 levels plus an ending:
+## 📦 Installation
 
-### Level 1: Living on the Outpost
-- **Survival challenges**: Food, Exercise, and Rest
-- **Food challenge**: Select TWO items from the vending machine. Correct: sealed drink and chicken treated with ionizing radiation. Wrong: can of soda and cookie (restarts the game)
-- **Cleaning challenge**: After eating, clean the spacecraft panels using a vacuum cleaner
-- **Rest challenge**: Choose where to sleep (preferably near a ventilation grille to remove CO₂)
-- **Exercise**: Use stationary bicycle with safety harness (must select correct item from vending machine)
-- **Rest mode**: Decide where Laika sleeps (near ventilation grille = safe)
-
-### Level 2: Preparing for the Mission
-- **Equipment selection**: Use vending machine to select essential landing equipment (parachute, heat shield, sky crane). Must select exactly 3 essential items from 6 options (3 essential + 3 distractors)
-- **Communication test**: Send an instruction to Laika but do NOT press the send button. Wait 30 seconds for response. Correct: wait without sending. Trap: sending another message repeatedly
-- **Science systems covered**: RADLAB + DONKI, OSDR, MARS TREK
-
-### Level 3: Martian Surface
-- **Photography mission**: Take photographs of marked camera buttons. Time limit: 5 minutes. If not completed by 3:30-minute mark, temperature begins to drop.
-- **Sandstorm**: When sandstorm begins, find shelter behind rocks, stop all scientific activities, and activate Low Power Mode. Dust is so dense that sunlight cannot reach solar panels.
-- **Extreme cold**: After sandstorm, temperature drops to -125°C. Activate Hibernation Mode to protect rover batteries. If rover not close enough to lava tunnel, it will be destroyed.
-- **Time mechanics**: Mission has 5-minute countdown. Temperature drops at 3:30 mark. Hibernation mode lasts 45 seconds.
-
-### Level 4: Lava Tunnel Exploration
-- **Platforming navigation**: Navigate lava tunnel with flashlight. Not all tunnels are safe.
-- **Find objects**: Must find and interact with two buttons: rock sample and camera
-- **Obstacles**: Jump between rocks following a straight path. If fall, restart from checkpoint at cave entrance
-- **Time limit**: Approximately 4 minutes total. Final 2 minutes dedicated to victory sequence.
-- **Victory**: Laika returns to Earth inside spacecraft, reuniting with player
-
-### Ending
-- **Win**: Laika survives and returns home with mission completed
-- **Incomplete**: Laika returns but mission unfinished - "I won't give up, try again before going back to Earth"
-- **Lost**: Laika doesn't return - whole mission was a failure
-
-## Simultaneous Systems (from briefing)
-- **RADLAB + DONKI**: Radiación y mediciones reales
-- **OSDR**: Salud (human/biological effects of spaceflight)
-- **MARS TREK**: Datos reales de Marte
-
-## Gameplay Mechanics
-- Delta time everywhere; no `time.sleep`; async-friendly `main()` keeps the pygbag path possible
-- Art and audio are fully procedural/synthesized; game runs with empty `assets/` and no audio files
-- Missing data/assets/audio/save → graceful fallback, never crash
-- Required parts for the ending: the seven part names in `data/planets.json` (Solar Panel Array, Hull Plating, Navigation Module, Shield Generator, Fuel Cells, Thermal Regulator, Signal Antenna)
-- Pickups are proximity-based (walk into); `E` fires the blaster in worlds, `E`/`Space` advances dialogue
-- Delta time everywhere; no `time.sleep`; async-friendly `main()` keeps the pygbag path possible
-
-## Controls
-- `E`/`Space`: Advance dialogue / Interact / Eat / Use
-- Arrow keys / WASD: Move
-- `F`: Toggle flashlight (Level 4)
-- `H`: Laika hint (when available)
-- `Esc`: Pause menu / Close dialogue
-
-## Target Play Time
-About 25-30 minutes, with mid-level checkpoints so a judge can see the full arc in one sitting.
-
-## Installation
 **Prerequisites:** Python 3.12 (3.11 also works).
 
 ```bash
+# Clone the repository
 git clone https://github.com/imamsanghaarc/nasa.git
 cd nasa
+
+# Create and activate virtual environment
 python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
+# Windows: .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
+```
+
+**Never install plain `pygame`; use `pygame-ce`.**
+
+Start the game:
+
+```bash
 python main.py
 ```
 
-Never install plain `pygame`; use `pygame-ce`.
+---
 
-## Adding a Level
-To add a new level:
-1. Create `data/levels/level<N>.json` with keys: `id`, `name`, `style`, `params`, `dialogue`, `phases`, `objective`, `systems`, `part`, `part_color`, `facts`
-2. Create `scenes/level<N>.py` scene following the pattern of existing levels
-3. Register the scene in `main.py` via `register_mission_scenes()`
+## 🎮 How to Play
+
+### Main Menu
+
+- **New mission** — Resets all progress and starts Level 1 (Outpost)
+- **Continue** — Loads last saved game (if exists)
+- **Settings** — Change difficulty, volume, sound, text size
+- **Quit** — Exit the game
+
+### Difficulty Levels
+
+| Level | Hearts | Timers | Hints |
+|-------|--------|--------|-------|
+| **Easy** | 5 | +25% time | Frequent hints |
+| **Normal** | 3 | Standard | Standard hints |
+| **Hard** | 2 | -15% time | Hints on request only |
+
+### Four-Level Mission Arc
+
+| Level | Theme | Key Mechanics |
+|-------|-------|--------------|
+| **1: Living on the Outpost** | Survival challenges | Food safety, exercise QTE, rest location, CO₂ management |
+| **2: Preparing for the Mission** | Equipment + comms | Vending machine (3/6 items), 45s communication delay test |
+| **3: Martian Surface** | Photography + survival | 6 camera buttons, sandstorm + hibernation mode (-125°C) |
+| **4: Lava Tunnel** | Platforming + escape | Flashlight, rock sample + camera buttons, escape sequence |
+
+### Three Endings
+
+- **Win** — Laika survives and returns home with mission completed
+- **Incomplete** — Laika returns but mission unfinished: *"I won't give up, try again before going back to Earth"*
+- **Lost** — Laika doesn't return: whole mission was a failure
+
+---
+
+## 📚 Documentation
+
+All documentation is kept in sync via `DOCS.md`. See the full documentation map:
+
+| Document | Purpose |
+|----------|---------|
+| [README.md](README.md) | Project overview (this file) |
+| [DOCS.md](DOCS.md) | Documentation index and keeping docs in sync |
+| [design.md](design.md) | Game design document — premise, story, pillars, level design, mechanics, art/audio, win-lose structure |
+| [technical.md](technical.md) | Technical reference — architecture, scene design, data flow, module guide, engineering rules, save system |
+| [playguide.md](playguide.md) | Player-facing guide — install, run, controls, level objectives, Laika/hints, difficulty, troubleshooting |
+| [SCIENCE.md](SCIENCE.md) | NASA science appendix — planetary facts, sources, APOD, verification |
+| [DATA.md](DATA.md) | Data & content format reference — planets, levels, dialogue, APOD JSON schemas |
+| [TOOLS.md](TOOLS.md) | Developer/QA tools — smoke test, APOD cache, science refresh, screen shots |
+| [HACKATHON.md](HACKATHON.md) | Hackathon-specific — project summary, judging criteria, controls, checklists |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contributing guide — code conventions, adding levels/dialogue/difficulty, art, science, documentation |
+
+Generate the journey document:
+
+```bash
+# The project journey document is at: LAIKA_MARS_MISSION_Project_Journey.docx
+```
+
+---
+
+## 🔬 Science Systems (from Briefing)
+
+Three NASA systems integrated per the briefing, all cached offline:
+
+| System | Role | URL |
+|--------|------|-----|
+| **RADLAB + DONKI** | Radiation and real measurements | <https://ccmc.gsfc.nasa.gov/tools/DONKI/> |
+| **OSDR** | Health and biology | <https://osdr.nasa.gov/> |
+| **MARS TREK** | Real Mars terrain | <https://trek.nasa.gov/mars/> |
+
+**Cached metrics in-game:** Mars surface dose ~0.64 mSv/day, bone density loss ~1-1.5%/month, night low -125°C, Gale Crater survey site, fastest winds >2,000 km/h (Neptune scale).
+
+---
+
+## 🏗️ Adding a Level
+
+To add a new level to the campaign:
+
+1. Create `data/levels/level<N>.json` with complete phase configuration
+2. Create `scenes/level<N>.py` scene following the established patterns
+3. Register the scene in `main.py` via `register_mission_scenes(manager)`
 4. Add level data to `data/mission.json` under the `levels` array
 5. Add planet part in `data/planets.json`
-6. Update documentation
-"
+6. Update: `design.md`, `playguide.md`, `README.md`, `DOCS.md`
+
+---
+
+## 🎮 Controls
+
+| Action | Key(s) |
+|--------|--------|
+| Advance dialogue / Interact | `E`, `Space` |
+| Toggle flashlight (Level 4) | `F` |
+| Laika hint | `H` |
+| Pause menu | `Esc` |
+| Move | Arrow keys, WASD |
+
+---
+
+## 🏆 Judging Criteria (NASA Space Apps)
+
+1. **Innovation** — Procedural mission generator with science integration
+2. **Technical** — Robust headless playtest, no crashes, graceful fallbacks
+3. **Science accuracy** — Real NASA data integrated into gameplay mechanics
+4. **User experience** — Intuitive controls, clear objectives, progressive difficulty
+5. **Accessibility** — Difficulty levels, text size adjustment, hint system
+6. **Completeness** — Full 4-level arc with win/incomplete/lose outcomes
+
+---
+
+## 📂 Repository Structure
+
+```
+E:\nasa\
+├── assets/           (fonts, optional images — 100% procedural)
+├── data/             (all JSON game data)
+│   ├── cache/        (APOD + science cache)
+│   ├── planets.json
+│   ├── levels/       (level1-4.json)
+│   ├── mission.json
+│   ├── dialogue/     (mars.json, etc.)
+│   └── science.json
+├── core/             (game state, settings, levels module)
+├── scenes/           (boot, menu, briefing, level1-4, ending)
+├── ui/               (dialogue box, HUD, modal, vending)
+├── art/              (environments, sprites — 100% procedural)
+├── tools/            (smoke_test, fetch_apod, fetch_science)
+├── main.py           (entry point, scene registration)
+├── docs/             (README.md, DOCS.md, design.md, technical.md, playguide.md, SCIENCE.md, DATA.md, TOOLS.md, HACKATHON.md, CONTRIBUTING.md)
+└── savegame.json     (player progress, auto-generated)
+```
+
+---
+
+## 🐛 Smoke Test
+
+Run the headless smoke test to verify all scenes:
+
+```bash
+python tools/smoke_test.py
+```
+
+**Output:** `all scenes ok` (14 scenes + ending)
+
+---
+
+Made with ❤️ for NASA Space Apps Challenge 2026 · [GitHub](https://github.com/imamsanghaarc/nasa)

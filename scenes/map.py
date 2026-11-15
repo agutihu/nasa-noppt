@@ -111,6 +111,7 @@ class MapScene(Scene):
         so nothing is painted at build time and nothing overflows the box."""
         self.panel_buttons = []
         planet = self.selected
+        self.close_rect = None
         if planet is None:
             return
 
@@ -118,6 +119,7 @@ class MapScene(Scene):
         x = panel.x + 34
         width = panel.width - 68
         y = panel.bottom - 70
+        self.close_rect = pygame.Rect(panel.right - 30, panel.y + 50, 26, 26)
 
         playable = planet.get("playable")
         part = planet.get("part")
@@ -280,6 +282,9 @@ class MapScene(Scene):
 
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if self.close_rect is not None and self.close_rect.collidepoint(event.pos):
+                    self.deselect()
+                    return
                 planet = self._find_at(event.pos)
                 if planet is not None:
                     self.select(planet)
@@ -418,6 +423,13 @@ class MapScene(Scene):
         )
         self._draw_part_icons(screen)
 
+    def _draw_close_button(self, screen: pygame.Surface, rect: pygame.Rect) -> None:
+        pygame.draw.rect(screen, (20, 30, 50), rect, border_radius=6)
+        pygame.draw.rect(screen, settings.DANGER, rect, 2, border_radius=6)
+        cx, cy = rect.center
+        pygame.draw.line(screen, settings.DANGER, (cx - 9, cy - 9), (cx + 9, cy + 9), 2)
+        pygame.draw.line(screen, settings.DANGER, (cx + 9, cy - 9), (cx - 9, cy + 9), 2)
+
     def _draw_panel(self, screen: pygame.Surface) -> None:
         panel = self._panel_rect()
         pygame.draw.rect(screen, settings.PANEL, panel, border_radius=14)
@@ -438,6 +450,9 @@ class MapScene(Scene):
             screen, settings.PANEL_EDGE,
             (panel.x + 2, panel.y + header_h), (panel.right - 2, panel.y + header_h), 1,
         )
+
+        if self.selected is not None and self.close_rect is not None:
+            self._draw_close_button(screen, self.close_rect)
 
         if self.selected is None:
             text.draw(

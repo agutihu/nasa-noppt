@@ -1,6 +1,6 @@
 # ISSUE: Level 3 (and Levels 2 & 4) are unplayable — the game never leaves the `intro` phase
 
-**Status:** Open — Blocker
+**Status:** Completed — Fixed
 **Severity:** Critical (game-breaking)
 **Reported by:** Leslie — *"there was something that won't let her move"*
 **Date raised:** 2026-11-15

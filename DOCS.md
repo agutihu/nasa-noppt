@@ -13,6 +13,7 @@ This directory contains the complete documentation suite for LAIKA: MARS MISSION
 | [TOOLS.md](TOOLS.md) | Tools | Developer/QA tools - NASA APOD cache, headless smoke test, scripted playtest, map panel shots. |
 | [SCIENCE.md](SCIENCE.md) | Science | NASA science appendix - planetary facts, sources, APOD imagery, verification. |
 | [DATA.md](DATA.md) | Data | Data & content format reference - planets, levels, dialogue, APOD JSON schemas, adding content. |
+| [issue.md](issue.md) | Issue tracker | Open defects with root cause, itemised fix list and estimates - starts with the 4-level campaign "stuck in intro" blocker. |
 
 ## Suggested reading order
 

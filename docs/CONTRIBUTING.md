@@ -1,4 +1,4 @@
-# HOMEBOUND - Contributing Guide
+# LAIKA: MARS MISSION - Contributing Guide
 
 ## Contributing to LAIKA: MARS MISSION
 

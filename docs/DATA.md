@@ -1,4 +1,4 @@
-# HOMEBOUND - Data Document
+# LAIKA: MARS MISSION - Data Document
 
 ## Data Format Reference
 

@@ -1,4 +1,4 @@
-# HOMEBOUND - Player Guide
+# LAIKA: MARS MISSION - Player Guide
 
 ## Installation
 

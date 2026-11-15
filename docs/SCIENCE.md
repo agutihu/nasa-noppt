@@ -1,4 +1,4 @@
-# HOMEBOUND - Science Document
+# LAIKA: MARS MISSION - Science Document
 
 ## NASA Science Systems
 

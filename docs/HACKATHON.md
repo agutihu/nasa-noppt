@@ -1,4 +1,4 @@
-# HOMEBOUND - Hackathon Document
+# LAIKA: MARS MISSION - Hackathon Document
 
 ## NASA Space Apps Challenge 2026
 

@@ -1,4 +1,4 @@
-# HOMEBOUND - Technical Document
+# LAIKA: MARS MISSION - Technical Document
 
 ## Architecture Essentials
 

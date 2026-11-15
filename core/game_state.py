@@ -31,6 +31,7 @@ class GameState:
     text_scale: float = 1.0
     show_hints: bool = True
     best_times: dict[str, float] = field(default_factory=dict)
+    tutorial_done: bool = False
 
     def __post_init__(self) -> None:
         if self.difficulty not in settings.DIFFICULTIES:
@@ -47,6 +48,9 @@ class GameState:
 
     def has_item(self, item_id: str | None) -> bool:
         return bool(item_id) and item_id in self.inventory
+
+    def has_part(self, part_id: str | None) -> bool:
+        return bool(part_id) and part_id in self.inventory
 
     def take_item(self, item_id: str) -> bool:
         if item_id not in self.inventory:
@@ -132,7 +136,8 @@ class GameState:
         """Sequential campaign: each level opens after the previous one is cleared."""
         order = list(settings.LEVEL_IDS)
         if level_id not in order:
-            return False
+            # Check if this is a tutorial-level planet unlock
+            return self.tutorial_done
         index = order.index(level_id)
         return index == 0 or order[index - 1] in self.levels_done
 

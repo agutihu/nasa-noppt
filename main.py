@@ -20,9 +20,11 @@ from scenes.map import MapScene
 from scenes.tutorial import TutorialScene
 from scenes.world_level import make_world_scene
 from scenes.ending import EndingScene
-from scenes.briefing import BriefingScene
+from scenes.briefing import BriefingScene, register_mission_scenes
 from scenes.level1 import Level1Scene
 from scenes.level2 import Level2Scene
+from scenes.level3 import Level3Scene
+from scenes.level4 import Level4Scene
 from ui.pause import PauseScene
 
 # every mission planet runs the shared world engine; each is its own scene name

@@ -93,7 +93,7 @@ class MenuScene(Scene):
 
     # --- actions ------------------------------------------------------------
     def new_mission(self) -> None:
-        self.state.reset()
+        self.state.reset_mission()
         self.state.save()
         self.manager.switch(settings.TUTORIAL)
 

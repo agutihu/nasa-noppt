@@ -22,6 +22,7 @@ class Modal:
     ) -> None:
         self.title = title
         self.body = body
+        self.active = True
         self.tone = {
             "danger": settings.DANGER,
             "warn": settings.WARN,
@@ -32,7 +33,6 @@ class Modal:
         self.footer = footer
         self.width = width
         self.t = 0.0
-
         self.rect = pygame.Rect(0, 0, width, 300)
         self.buttons: list[Button] = []
         specs = buttons or [("Continue", None, "primary")]
@@ -56,6 +56,10 @@ class Modal:
         if self.buttons:
             self.buttons[0].focused = True
         self.focus = 0
+        # Close button (X) in the top-right corner of the panel
+        self.close_rect = pygame.Rect(
+            self.rect.right - 32, self.rect.top + 8, 24, 24
+        )
 
     # --- layout -------------------------------------------------------------
     def _measure_height(self, specs) -> int:
@@ -82,6 +86,14 @@ class Modal:
                     if self.buttons:
                         self.buttons[self.focus].activate()
                     return True
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                # Close modal if clicking the X button
+                if self.close_rect and self.close_rect.collidepoint(event.pos):
+                    self.active = False
+                    return True
+                # Close modal if clicking outside the panel
+                elif not self.rect.collidepoint(event.pos):
+                    self.active = False
         for index, button in enumerate(self.buttons):
             if button.handle_events(events):
                 self.focus = index
@@ -92,11 +104,14 @@ class Modal:
         for index, button in enumerate(self.buttons):
             button.focused = index == self.focus
 
-    # --- drawing ------------------------------------------------------------
+    # --- update -----------------------------------------------------------
     def update(self, dt: float) -> None:
         self.t += dt
 
+    # --- drawing ----------------------------------------------------------
     def draw(self, surface: pygame.Surface) -> None:
+        if not self.active:
+            return
         veil = pygame.Surface((settings.WIDTH, settings.HEIGHT), pygame.SRCALPHA)
         veil.fill((4, 3, 8, 208))
         surface.blit(veil, (0, 0))
@@ -153,8 +168,33 @@ class Modal:
                 shadow=False,
             )
 
+        # Draw close (X) button in top-right corner
+        pygame.draw.rect(
+            surface, settings.PANEL_EDGE, self.close_rect, border_radius=6
+        )
+        pygame.draw.line(
+            surface,
+            settings.INK,
+            (self.close_rect.x + 8, self.close_rect.y + 8),
+            (self.close_rect.x + 24 - 8, self.close_rect.y + 24 - 8),
+            3,
+        )
+        pygame.draw.line(
+            surface,
+            settings.INK,
+            (self.close_rect.x + 8, self.close_rect.y + 24 - 8),
+            (self.close_rect.x + 24 - 8, self.close_rect.y + 8),
+            3,
+        )
+
         for button in self.buttons:
             button.draw(surface)
+
+    def is_active(self) -> bool:
+        return self.active
+
+    def close(self) -> None:
+        self.active = False
 
 
 class Confirm:

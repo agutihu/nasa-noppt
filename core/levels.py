@@ -166,3 +166,15 @@ def load_planets() -> dict:
 
 def level_names() -> dict[str, str]:
     return {entry["id"]: entry["name"] for entry in level_list()}
+
+
+def previous_mission(planet_id: str) -> str | None:
+    """Get the previous mission planet id in the world order.
+    Returns None for the first planet (tutorial).
+    """
+    order = ("mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune")
+    if planet_id in order:
+        idx = order.index(planet_id)
+        if idx > 0:
+            return order[idx - 1]
+    return None

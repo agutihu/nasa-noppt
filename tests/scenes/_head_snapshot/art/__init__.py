@@ -1,1 +1,0 @@
-"""Procedural art helpers."""

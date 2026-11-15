@@ -1,9 +1,0 @@
-{
-  "title": "Earth from orbit",
-  "explanation": "Offline archive entry. Run tools/fetch_apod.py once with internet to cache today's NASA Astronomy Picture of the Day; the game never needs the network to run.",
-  "url": "",
-  "media_type": "text",
-  "date": "2026-11-14",
-  "fetched_at": 0,
-  "offline_fallback": true
-}

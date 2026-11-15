@@ -38,7 +38,7 @@ Three survival challenges test your decisions. Laika guides you through each tas
 
 ### 1. Food Challenge
 - **Safety briefing first**: Laika explains "No open liquids: in microgravity, a spilled drink floats and can reach the panels, vents, and the outpost's most sensitive circuits. Choose sealed drinks you can drink through a straw or valve. No crumbly food: crumbs float into the ventilation grilles and circuit boards. Choose food that is sealed, moist, and eaten in one bite — like irradiated chicken in a pouch."
-- **Vending machine**: Select TWO items. Correct: sealed drink + irradiated chicken. Wrong: can of soda + cookie → "FOOD SAFETY PROTOCOL VIOLATED" → restart the game.
+- **Vending machine**: Select TWO items. Correct: sealed drink + irradiated chicken. Wrong: can of soda + cookie → "FOOD SAFETY PROTOCOL VIOLATED" modal appears; player retries the food task (not full mission restart).
 - **After eating**: Objective shifts to "Take your meal to the table and eat." Walk to the table and press E/Eat. Then: "Use the vacuum cleaner to remove all food particles from the panels." Vacuum proximity: press E near the vacuum rect to clean crumbs. Counter: CRUMBS 0/14. When all 14 cleaned, proceed.
 
 ### 2. Exercise Challenge
@@ -179,7 +179,7 @@ Navigate the lava tunnel with flashlight, find rock sample and camera buttons, a
 - All mechanics have graceful fallbacks
 
 ## Target Play Time
-About 25-30 minutes total, with mid-level checkpoints so a judge can see the full arc in one sitting.
+Approximately 20-30 minutes total experience. Core gameplay runs 15-25 minutes depending on difficulty, with briefings and dialogue between levels extending the full experience. Mid-level checkpoints allow judges to see progress in one sitting.
 
 ## Quick Controls Summary
 | Action | Key(s) |

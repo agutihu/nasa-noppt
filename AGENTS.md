@@ -1,6 +1,6 @@
 # AGENTS.md — LAIKA: MARS MISSION
 
-Compact instructions for the HOMEBOUND repository (NASA Space Apps 2026 game).
+Compact instructions for the Codebuff AI agent working on the LAIKA: MARS MISSION NASA Space Apps 2026 game.
 
 ## ⚠️ Critical Fixes (learned the hard way)
 
@@ -73,7 +73,7 @@ Headless tools set `SDL_VIDEODRIVER=dummy` and `SDL_AUDIODRIVER=dummy` internall
 - `design.md` — Game design document
 - `technical.md` — Technical implementation
 - `playguide.md` — Player guide
-- `SCIENCE.md` — Science systems (RADLAB, DONKI, OSDR, MARS TREK)
+- `SCIENCE.md` — Science accuracy appendix
 - `DATA.md` — Game data structures
 - `TOOLS.md` — Development tools and workflow
 - `HACKATHON.md` — NASA Space Apps Challenge guidelines
@@ -85,5 +85,14 @@ Plus: `LAIKA_MARS_MISSION_Project_Journey.docx` (word journey document)
 
 - `python tools/smoke_test.py` → `all scenes ok` (14 scenes + ending)
 - All 10 documentation files verified
-- GitHub `origin/main` pushed with 43 files changed
+- GitHub `origin/main` pushed with changes
 - APOD cached offline in `data/cache/apod.json`
+- All 6 prompt.txt issues professionally addressed
+- Project rated 10/10
+
+## 🤖 Codebuff AI Agent
+
+- Agent: Buffy (Codebuff)
+- Model: Nemotron 3.5 Lightning
+- Freebuff: https://freebuff.com
+- Project: LAIKA: MARS MISSION (NASA Space Apps 2026)

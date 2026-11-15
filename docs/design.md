@@ -8,13 +8,13 @@ Today you are going to help with a really important mission, gathering informati
 2. **Science integration**: Every mechanic is grounded in real NASA data. The three systems from the briefing (RADLAB+DONKI, OSDR, MARS TREK) provide the science layer.
 3. **Procedural everything**: Art, audio, and worlds are all generated in code. No image files required. Game runs with empty `assets/`.
 4. **Graceful fallbacks**: Missing data/assets/audio/save never crashes the game.
-5. **Short play sessions**: Target ~25-30 minutes total. Judges can see the full arc in one sitting.
+5. **Short play sessions**: 20-30 minutes total experience. Core gameplay is ~15-25 minutes depending on difficulty, with briefings and dialogue extending the full experience. Judges can see the full arc in one sitting.
 
 ## Level Design
 
 ### Level 1: Living on the Outpost
 - **Survival challenges test your decisions**. Laika guides you through three tasks.
-- **Food challenge**: Two-step process. First, safety briefing explains why no open liquids (microgravity spills) and no crumbly food (crumbs damage circuits/vents). Then vending machine: select sealed drink + irradiated chicken. Wrong choice = "FOOD SAFETY PROTOCOL VIOLATED" + restart the game.
+- **Food challenge**: Two-step process. First, safety briefing explains why no open liquids (microgravity spills) and no crumbly food (crumbs damage circuits/vents). Then vending machine: select sealed drink + irradiated chicken. Wrong choice triggers "FOOD SAFETY PROTOCOL VIOLATED" modal; player retries the food task (not full mission restart).
 - **Exercise challenge**: Vending machine in code mode. Must enter code 4 for safety harness. Then stationary bicycle: 22-second QTE with alternating left/right key presses. Running freely launches player to ceiling (lose).
 - **Rest challenge**: Laika asks where to sleep. Three options: Control area (CO₂ risk), Exercise area (CO₂ risk), Resting stations (safe). Only resting stations is correct. Correct choice: Laika sleeps, CO₂ is extracted, mission secure.
 
@@ -51,12 +51,12 @@ Today you are going to help with a really important mission, gathering informati
 - Sounds: All generated in code via sine/square wave recipes.
 
 ## Difficulty Levels
-- **Easy**: Longer timers, gentler storms, more retries. 5 hearts, +25% time, frequent hints.
+- **Easy**: 5 hearts, +25% time, frequent hints, longer timers.
 - **Normal**: The mission as designed on the slides. 3 hearts, standard hazards, standard time.
-- **Hard**: Short timers, harsher cold, stricter comms. 2 hearts, -15% time, hints on request only.
+- **Hard**: 2 hearts, -15% time, shorter timers, harsher cold, stricter comms, hints on request only.
 
 ## Fail Handling
-- **Food wrong**: "FOOD SAFETY PROTOCOL VIOLATED" modal + restart the entire mission from Level 1.
+- **Food wrong**: "FOOD SAFETY PROTOCOL VIOLATED" modal. Player retries only the food task. On Easy difficulty, one heart is costed; on Normal/Hard, task is retried without penalty.
 - **Other task failures**: Retry the specific challenge, not full game restart.
 - **Catastrophic losses** (rover destroyed, fallen into pit): End game with appropriate outcome.
 

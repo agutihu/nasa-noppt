@@ -26,7 +26,7 @@ The game ships with curated NASA science data from three systems mentioned on th
 - **Metrics displayed in-game**:
   - Survey sites: Gale Crater (referenced in Level 3)
   - Night low temperature: -125°C (Level 3 cold alert)
-  - Fastest winds in solar system: >2,000 km/h (Neptune, referenced for scale)
+  - Mars wind patterns: Dust storms can reach 100 km/h at the surface; upper-atmosphere winds are faster but gentle in force due to thin atmosphere
   - Mars gravity: 3.71 m/s² (38% of Earth, Level 1 exercise mechanic)
 - **In-game relevance**: Level 3 photography mission uses real Mars terrain concepts. Sandstorm mechanics based on real dust storm behavior. Cold mechanics based on real Mars nighttime temperatures.
 

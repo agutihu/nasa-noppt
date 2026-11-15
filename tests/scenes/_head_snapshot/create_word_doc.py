@@ -270,7 +270,7 @@ p.add_run('— Win/lost/incomplete outcomes with Laika return animation and stat
 p = doc.add_paragraph()
 run = p.add_run('2. Documentation review ')
 run.bold = True
-p.add_run('— Send to Vicky for last checkup (the Word document you requested)')
+p.add_run('')
 
 p = doc.add_paragraph()
 run = p.add_run('3. Final build test ')

@@ -18,7 +18,7 @@
 - Dataclass with: `parts`, `facts`, `deaths`, `difficulty`, `player_name`, `current_level`, `elapsed`, `tutorial_done`, `volume`, `muted`, `text_scale`, `levels_done`, `best_times`
 - Methods: `add_part()`, `has_part()`, `required_parts()`, `all_parts()`, `mark_level_done()`, `is_level_done()`, `best_time()`, `is_unlocked()`, `next_level_id()`, `complete_level()`, `finish_mission()`, `reset_mission()`, `save()`, `load()`, `to_dict()`, `from_dict()`
 - Derived text: `status_line()`, `progress_line()`, `mission_line()`, `science_line()`
-- Difficulty multipliers: easy (0.75 speed, 1.25 time, 5 hearts, 20% hints), normal (1.0), hard (1.25 speed, 0.85 time, 2 hearts, 0% hints)
+- Difficulty: Easy (+25% time, 5 hearts, frequent hints), Normal (standard), Hard (-15% time, 2 hearts, hints on request only)
 
 ### Scene Base Class (core/scene.py)
 - `Scene` class with `name`, `counts_time` flag

@@ -10,9 +10,9 @@
 **Python Version**: 3.12+  
 **Dependencies**: pygame-ce  
 
-### Project Summary
+### Project Summary & Emotional Hook
 
-LAIKA: MARS MISSION is a junior astronaut mission trainer where the player guides Laika, a robotic dog, through four survival challenges on the way to Mars. Every mechanic is grounded in real NASA data, and the game teaches players about solar radiation, communication delays, sandstorm survival, and extreme cold operations.
+LAIKA: MARS MISSION is a junior astronaut mission trainer where the player guides Laika, a robotic dog, through four survival challenges on the way to Mars. Laika — history's first animal astronaut — embodies the courage of early space explorers. Players step into the role of a junior astronaut trainer, making critical decisions that determine Laika's survival. Every mechanic is grounded in real NASA data, and the game teaches players about solar radiation, communication delays, sandstorm survival, and extreme cold operations. The emotional hook: honoring Laika's legacy while inspiring the next generation to pursue STEM and planetary exploration.
 
 ### Key Features (per NASA Space Apps Briefing)
 
@@ -23,7 +23,7 @@ LAIKA: MARS MISSION is a junior astronaut mission trainer where the player guide
    - Level 4: Lava tunnel exploration (platforming + flashlight + escape)
 
 2. **Science integration**:
-   - RADLAB + DONKI: Radiation measurements
+   - RADLAB + DONKI: Radiation measurements and real-space weather
    - OSDR: Human/biological effects of spaceflight
    - MARS TREK: Real Mars terrain data
 
@@ -33,27 +33,55 @@ LAIKA: MARS MISSION is a junior astronaut mission trainer where the player guide
 
 5. **Three difficulty levels**: Easy (longer timers, more retries), Normal (as designed), Hard (shorter timers, stricter comms).
 
-6. **Three endings**: Win (Laika returns home), Incomplete (Laika returns but mission unfinished), Lost (Laika doesn't return).
+6. **Three endings**: Win (Laika returns home), Incomplete (Laika returns but mission unfinished), Lost (Laika does not return).
 
-### Development Roadmap
+### Learning Outcomes
 
-- **Week 1**: Core framework, settings, save system, game state, science layer
-- **Week 2**: Art pipeline (procedural environments, sprites), movement controllers
-- **Week 3**: Level 1 (Outpost) — food, exercise, rest challenges
-- **Week 4**: Level 2 (Landing) — equipment vending + communication delay
-- **Week 5**: Level 3 (Surface) — photography + sandstorm + cold
-- **Week 6**: Level 4 (Lava Tunnel) — platforming + flashlight + escape
-- **Week 7**: Ending screen, documentation, polish
-- **Week 8**: Headless smoke test, final build, judge presentation
+Players will achieve the following 3-5 outcomes:
 
-### judging Criteria (NASA Space Apps)
+1. **Radiation safety**: Understanding planetary radiation environments (0.64 mSv/day on Mars surface), the role of DONKI real-time space weather monitoring, and how mission designers must account for cumulative exposure.
 
-1. **Innovation**: Procedural mission generator with science integration
-2. **Technical**: Robust headless playtest, no crashes, graceful fallbacks
-3. **Science accuracy**: Real NASA data integrated into gameplay mechanics
-4. **User experience**: Intuitive controls, clear objectives, progressive difficulty
-5. **Accessibility**: Difficulty levels, text size adjustment, hint system
-6. **Completeness**: Full 4-level arc with win/incomplete/lose outcomes
+2. **Bone and muscle loss mitigation**: The importance of exercise in microgravity, referencing the in-game bike challenge and real NASA data on ~1-1.5%/month bone density loss without loading.
+
+3. **CO2 and rest management**: Recognizing the critical role of ventilation grilles for CO2 extraction and the consequences of poor rest area selection, tying into the in-game rest challenge with ventilation grille proximity.
+
+4. **EDL sequence (Entry, Descent, Landing)**: Understanding the communication delay (~45 seconds one-way at Mars), equipment selection (parachute, heat shield, sky crane), and why waiting without pressing send is essential for safe landing.
+
+5. **Sandstorms and extreme cold**: Identifying Martian sandstorm hazards, the temperature drop to -125°C, and the hibernation mode procedure that protects rover batteries — all based on real MARS TREK data.
+
+### How This Maps to NASA Data
+
+The game integrates three core NASA data systems into every gameplay mechanic:
+
+- **RADLAB + DONKI**: Mars surface dose ~0.64 mSv/day; solar particle events are watched via the DONKI feed at `https://ccmc.gsfc.nasa.gov/tools/DONKI/`. In-game, radiation meters and warning alerts reflect real-time space weather data.
+- **OSDR**: Bone density loss (~1-1.5%/month without loading), muscle loss without exercise, and other biomedical effects are tracked via `https://osdr.nasa.gov/`. The game's exercise bike and rest challenges embody these concepts.
+- **MARS TREK**: Real Mars terrain at `https://trek.nasa.gov/mars/`, including night lows of -125°C at Gale Crater, survey sites, and fastest winds >2,000 km/h (used as a scale reference, not as Mars winds). Sandstorm visuals and hibernation temperature warnings are derived from MARS TREK data.
+
+### Impact Statement
+
+LAIKA: MARS MISSION brings NASA-calibrated space science to a broad junior-audience through an accessible, 20-30 minute game. By integrating real radiation data (DONKI), biomedical findings (OSDR), and planetary imagery (MARS TREK), the game transforms abstract science into tactile decisions: managing radiation exposure, choosing exercise to counteract muscle loss, selecting safe rest zones to avoid CO2 buildup, and respecting EDL communication delays. The project addresses the NASA Space Apps Challenge goal of making NASA data explorable and engaging, particularly for younger audiences who may not encounter these systems otherwise. All science values are verified: 0.64 mSv/day (NASA PDS), 1-1.5%/month (NASA HRP), -125°C extreme polar (MARS TREK/Gale Crater), 3.71 m/s² Mars gravity.
+
+### Future Work
+
+- Expand the mission to include additional planets and moons from the solar system
+- Add multiplayer collaborative mode where players coordinate decisions across levels
+- Implement text size accessibility slider with live preview
+- Develop web (pygbag) build for instant play without installation
+- Create educational companion materials (lesson plans, data exploration activities)
+- Add more Laika dialogue lines with branching paths based on player choices
+- Integrate additional NASA data systems (e.g., Mars Climate Database, MAVEN particle data)
+
+### Screenshot Captions (for judging materials)
+
+| Screenshot | Description |
+|------------|-------------|
+| Boot screen with APOD image | Daily NASA Astronomy Picture of the Day displayed on game launch, cached offline in `data/cache/apod.json` |
+| Outpost vending machine food challenge | Player selecting sealed drink + irradiated chicken; wrong choices trigger "FOOD SAFETY PROTOCOL VIOLATED" modal |
+| Level 2 communication delay countdown | 45-second countdown "Communications delay: 00:45. Do NOT press the button." |
+| Level 3 sandstorm approaching | Storm clouds overlay, visibility reduced, warning "Temperature dropping to -125°C! Activate Hibernation Mode." |
+| Level 4 lava tunnel with flashlight | F key toggles Laika's flashlight; beam lights dark tunnel; rock sample and camera buttons visible |
+| Win ending: Laika returns home | Laika inside spacecraft, reuniting with player; stats screen shows mission time, parts recovered, facts learned |
+| HUD with part inventory | Top bar shows level name, challenge/timer, objective, time left, and part inventory counters |
 
 ### Controls (Quick Reference)
 
@@ -67,9 +95,9 @@ LAIKA: MARS MISSION is a junior astronaut mission trainer where the player guide
 
 ### Target Specifications
 
-- **Play time**: 25-30 minutes full arc
+- **Play time**: 20-30 minutes total experience (15-25 min core gameplay, rest from briefings/dialogue)
 - **Difficulties**: Easy, Normal, Hard
-- **Scenes**: 14 (boot, menu, map, tutorial, 4 levels × 4: boot/menu/briefing/level, ending) + smoke test
+- **Scenes**: 14 (boot, menu, map, tutorial, level1-4, briefing, ending) + smoke test
 - **Platforms**: Windows (primary), macOS, Linux, Web (pygbag)
 - **Assets**: None required (procedural generation)
 - **Save file**: `savegame.json` next to executable

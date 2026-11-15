@@ -1,0 +1,2 @@
+# Development dependencies (formatters, linters, etc.) — not needed to play.
+black>=24.0

@@ -1,0 +1,13 @@
+{
+  "speaker": "Laika",
+  "lines": [
+    { "trigger": "start", "text": "Jupiter. No ground at all - we are on storm platforms above the cloud decks. The gravity here is 2.5 times Earth, so every jump feels heavy." },
+    { "trigger": "start", "text": "Lightning columns everywhere, and the saucers ride the storm. Do not fall - there is nothing below but ammonia." },
+    { "trigger": "moment", "text": "The gravity is spiking with the storm. Every jump you make now lands heavier." },
+    { "trigger": "part", "text": "Shield Generator recovered! Radiation belts like these would fry the ship without it." },
+    { "trigger": "win", "text": "Generator stowed. The Great Red Spot is right there - a storm wider than Earth." },
+    { "trigger": "hint", "text": "Lightning strikes in columns that flash first. Time your run between them." },
+    { "trigger": "hint", "text": "Platform gaps need a running jump. The heavy gravity cuts your hang time." },
+    { "trigger": "death_3", "text": "Fire two bolts into each saucer, or bounce on top of them." }
+  ]
+}

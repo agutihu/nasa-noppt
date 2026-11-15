@@ -22,8 +22,18 @@
     { "trigger": "bike", "text": "Pedal the stationary bike. Keep the rhythm: alternating left and right. Do not press the same key twice in a row." },
     { "trigger": "rest_intro", "text": "Astronaut, where should Laika sleep? In space, there is no vertical or horizontal. Astronauts attach their sleeping bags to the floor or walls. However, they must choose a location near ventilation grilles that remove the CO₂ we produce when breathing." },
     { "trigger": "rest_control", "text": "Control area selected. Laika receives a CO₂ accumulation warning. This could compromise the mission." },
-    { "trigger": "rest_exercise", "text": "Exercise area selected. Laika receives a CO₂ accumulation warning. This could compromise the mission." },
-    { "trigger": "rest_done", "text": "Laika is sleeping near the ventilation grille. The grilles are extracting the CO₂ from the surrounding air. The mission is secure." },
+    { "trigger": "rest_exercise", "text": "Exercise area selected. Laika receives a CO₂ accumulation warning. This could compromise the mission." },    { "trigger": "rest_done",
+    "text": "Laika is sleeping near the ventilation grille. The grilles are extracting the CO₂ from the surrounding air. The mission is secure." },
+    { "trigger": "photo_intro",
+    "text": "Laika explains the photography mission. Use the camera to take pictures of marked locations." },
+    { "trigger": "take_photos",
+    "text": "Take photographs of all marked camera buttons. A shutter sound will play for each photo taken." },
+    { "trigger": "sandstorm",
+    "text": "Sandstorm rolling in! Find shelter behind the rocks, stop all activities, and activate Low Power Mode." },
+    { "trigger": "cold_alert",
+    "text": "The temperature is dropping to -125 °C. Activate Hibernation Mode to protect the rover." },
+    { "trigger": "hibernation",
+    "text": "Hibernation Mode activated. The rover is protected from the cold. Wait for the temperature to stabilize." },
     { "trigger": "complete", "text": "All three challenges are complete. You have survived the outpost. Ready for the next level?" }
   ]
 }

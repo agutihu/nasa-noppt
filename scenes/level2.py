@@ -55,6 +55,15 @@ class Level2Scene(Scene):
     name = settings.LEVEL2
     counts_time = True
 
+    #: phase id -> handler method (checked by tools/campaign_test.py)
+    phase_handlers = {
+        "intro": "_handle_intro",
+        "landing_briefing": "_handle_landing_briefing",
+        "landing": "_handle_landing",
+        "comm_test": "_handle_comm_test",
+        "complete": "_handle_complete",
+    }
+
     def on_enter(self, **data) -> None:
         self.cfg = levels.load_level("level2")
         self.params = levels.params_for(self.cfg, self.state.difficulty)

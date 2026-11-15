@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pygame
 
-from core import audio, settings, text
+from core import audio, levels, settings, text
 from core.scene import Scene
 from art import environments
 from ui.dialogue_box import DialogueBox
@@ -18,18 +18,38 @@ class BriefingScene(Scene):
     name = settings.BRIEFING
     counts_time = False
 
-    def __init__(self, level_id: str = "outpost") -> None:
-        super().__init__(None)  # game set later
-        self.level_id = level_id
-        self.dlg = DialogueBox(self.game)
+    def __init__(self, game) -> None:
+        # Do NOT pass None to Scene.__init__; set placeholders first.
+        # Scene.__init__ will try game.screen, so we need a screen.
+        class _DummyGame:
+            screen: pygame.Surface = pygame.Surface((1, 1))
+            state = None
+            manager = None
+        # But we still need to call super somehow... instead,
+        # set attributes that Scene.__init__ would set, then override.
+        self.game = game
+        self.screen = pygame.Surface((1, 1))
+        self.state = None
+        self.manager = None
+        self.level_id = "outpost"
+        self.dlg = DialogueBox(self)
         self.t = 0.0
         self.continue_key = False
 
     def on_enter(self, **data) -> None:
         self.t = 0.0
         self.continue_key = False
+        # level_id may come from switch(level_id="outpost") or default
+        level_id = data.get("level_id", self.level_id)
+        _MISSION_TO_LEVEL = {
+            "outpost": "level1",
+            "landing": "level2",
+            "surface": "level3",
+            "tunnel": "level4",
+        }
+        actual_level_id = _MISSION_TO_LEVEL.get(level_id, level_id)
         # load the level config to get name and blurb
-        self.cfg = levels.load_level(self.level_id)
+        self.cfg = levels.load_level(actual_level_id)
         self.dialogue = levels.load_dialogue(self.cfg.get("dialogue", "dialogue/mars.json"))
         self.hud = None  # not needed for briefing
 

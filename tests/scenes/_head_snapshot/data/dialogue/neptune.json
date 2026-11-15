@@ -1,0 +1,14 @@
+{
+  "trigger_note": "Neptune: supersonic winds, sideways rain, the edge of everything.",
+  "speaker": "Laika",
+  "lines": [
+    { "trigger": "start", "text": "Neptune. The fastest winds in the solar system - more than 2,000 kilometres per hour, and we are standing in them." },
+    { "trigger": "start", "text": "The wind gusts sideways in bands. Lean into the blue streaks, and do not fight the gusts - time them." },
+    { "trigger": "moment", "text": "The winds are peaking. This is the worst blow we will get - hold on and keep going." },
+    { "trigger": "part", "text": "Signal Antenna recovered. One call home from the edge of the system." },
+    { "trigger": "win", "text": "Antenna stowed. That is every part. Earth is waiting - assemble the ship." },
+    { "trigger": "hint", "text": "When the wind lines light up, hold your ground. Move in the calm." },
+    { "trigger": "hint", "text": "The saucers here are veterans: two bolts each, and they lead their shots." },
+    { "trigger": "death_3", "text": "Keep your jumps short in the gust bands. Long jumps become long falls." }
+  ]
+}

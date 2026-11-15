@@ -1,0 +1,73 @@
+{
+  "id": "neptune",
+  "name": "Neptune",
+  "style": "world",
+  "part": { "name": "Signal Antenna", "color": "#a0c4ff" },
+  "objective": "Fight the supersonic winds, recover the Signal Antenna, and make the call home.",
+  "briefing": [
+    "Winds exceed 2,000 km/h. Gust bands push you backwards - time them.",
+    "Rain falls sideways here. The saucers are veterans: two bolts each.",
+    "Grab the part, then reach the return pod to finish."
+  ],
+  "params": {
+    "seed": 31,
+    "moment": {
+      "at": 0.55,
+      "duration": 6.0,
+      "wave": 2,
+      "burst_every": 3.0,
+      "title": "DEEP TRENCH"
+    },
+    "world_length": 6200,
+    "ground_y": 560,
+    "gravity_px": 1020,
+    "jump_speed": 720,
+    "move_speed": 250,
+    "friction": 2000,
+    "walker_speed": 85,
+    "walker_charge": 150,
+    "ufo_speed": 75,
+    "ufo_fire_interval": 1.9,
+    "plasma_speed": 230,
+    "gap_chance": 0.32,
+    "gap_min": 90,
+    "gap_max": 170,
+    "platform_chance": 0.55,
+    "enemy_density": 0.80,
+    "ufo_chance": 0.45,
+    "hazard_density": 0.52,
+    "hazard_types": ["spikes", "meteor_zone", "geyser"],
+    "alien_color": "#7a7ae0",
+    "meteor_color": "#8fb0ff",
+    "wind": [-70, 0],
+    "theme": {
+      "sky_top": "#101a4a",
+      "sky_bottom": "#4a63c8",
+      "ridge_far": "#2a3a7a",
+      "ridge_near": "#3a4a9a",
+      "ground": "#3a4a9a",
+      "ground_top": "#7b8ee6",
+      "ground_edge": "#202a60",
+      "accent": "#a0c4ff",
+      "hazard": "#8fb0ff",
+      "bands": 2,
+      "band_colors": ["#3a4aa8", "#7b8ee6"],
+      "storm_spot": "#2a3a8a",
+      "stars": true,
+      "ridge_style": "shards",
+      "ufo_color": "#8a9ad8"
+    },
+    "weather": {
+      "type": "wind_rain",
+      "density": 100,
+      "wind": [-240, 0],
+      "color": [160, 190, 255, 120],
+      "haze": [40, 60, 140, 38],
+      "lightning": true
+    }
+  },
+  "hint_rules": { "idle_seconds": 45, "deaths": 3 },
+  "dialogue": "dialogue/neptune.json",
+  "facts": ["neptune_winds"],
+  "unlock": []
+}

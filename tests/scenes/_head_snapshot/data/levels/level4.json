@@ -1,0 +1,65 @@
+{
+  "id": "tunnel",
+  "name": "Level 4: Lava Tunnel Exploration",
+  "style": "tunnel",
+  "params": {
+    "player_start": [640, 400],
+    "ground_y": 560,
+    "gravity_px": 560,
+    "move_speed": 250,
+    "accel": 1400,
+    "friction": 900,
+    "jump_speed": 0,
+    "max_health": 3,
+    "hold_boost": 0.5
+  },
+  "dialogue": "dialogue/mars.json",
+  "objective": "Navigate the lava tunnel, find the rock sample and camera, and escape before time runs out.",
+  "briefing": [
+    "Not all lava tunnels are safe. Turn on Laika's flashlight to navigate dark areas and identify a safe path.",
+    "Inside the tunnel, find the rock sample button and the camera button. If Laika falls, restart from the cave entrance checkpoint.",
+    "The final two minutes are a short victory sequence showing Laika returning to Earth inside the spacecraft."
+  ],
+  "phases": [
+    {
+      "id": "intro",
+      "objective": "Follow Laika into the lava tunnel entrance.",
+      "dialogue_trigger": "intro",
+      "time_limit": null
+    },
+    {
+      "id": "flashlight_on",
+      "objective": "Turn on Laika's flashlight to see the dark tunnel path.",
+      "dialogue_trigger": "flashlight_on",
+      "time_limit": 5
+    },
+    {
+      "id": "explore",
+      "objective": "Navigate the tunnel using the flashlight. Find the rock sample and camera buttons. Watch for falling rocks!",
+      "dialogue_trigger": "explore",
+      "time_limit": 240
+    },
+    {
+      "id": "find_objects",
+      "objective": "Interact with the rock sample and camera buttons. Both must be activated to escape.",
+      "dialogue_trigger": "find_objects",
+      "time_limit": 10
+    },
+    {
+      "id": "escape",
+      "objective": "Both objectives complete. Laika exits the tunnel toward the final destination.",
+      "dialogue_trigger": "escape",
+      "time_limit": 5
+    },
+    {
+      "id": "complete",
+      "objective": "Level 4 complete. Return to the briefing screen.",
+      "dialogue_trigger": "complete",
+      "time_limit": null
+    }
+  ],
+  "systems": ["RADLAB+DONKI", "OSDR", "MARS TREK"],
+  "part": "Signal Antenna",
+  "part_color": "#a0c4ff",
+  "facts": ["neptune_winds"]
+}

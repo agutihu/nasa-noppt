@@ -1,0 +1,68 @@
+{
+  "id": "venus",
+  "name": "Venus",
+  "style": "world",
+  "part": { "name": "Hull Plating", "color": "#7bdff2" },
+  "objective": "Find the Hull Plating in the acid lowlands and carry it back through the rain.",
+  "briefing": [
+    "Acid pools eat through the suit. Go around, never through.",
+    "It rains acid here - the saucers love this haze.",
+    "Grab the part, then reach the return pod to finish."
+  ],
+  "params": {
+    "seed": 7,
+    "moment": {
+      "at": 0.55,
+      "duration": 6.0,
+      "wave": 2,
+      "burst_every": 3.0,
+      "title": "ACID RAIN SURGE"
+    },
+    "world_length": 5000,
+    "ground_y": 560,
+    "gravity_px": 980,
+    "jump_speed": 700,
+    "move_speed": 240,
+    "friction": 2200,
+    "walker_speed": 75,
+    "walker_charge": 140,
+    "ufo_speed": 65,
+    "ufo_fire_interval": 2.1,
+    "plasma_speed": 210,
+    "gap_chance": 0.28,
+    "gap_min": 80,
+    "gap_max": 150,
+    "platform_chance": 0.55,
+    "enemy_density": 0.65,
+    "ufo_chance": 0.40,
+    "hazard_density": 0.50,
+    "hazard_types": ["acid_pool", "geyser", "spikes"],
+    "alien_color": "#8fd35a",
+    "meteor_color": "#ff9650",
+    "theme": {
+      "sky_top": "#3d2b12",
+      "sky_bottom": "#b97a2e",
+      "ridge_far": "#8a5c22",
+      "ridge_near": "#6b4a1e",
+      "ground": "#7a5424",
+      "ground_top": "#a3742e",
+      "ground_edge": "#4a3012",
+      "accent": "#7bdff2",
+      "hazard": "#7ce87c",
+      "stars": false,
+      "ridge_style": "dunes",
+      "ufo_color": "#c9b088"
+    },
+    "weather": {
+      "type": "acid_rain",
+      "density": 110,
+      "wind": [-60, 0],
+      "color": [190, 255, 140, 110],
+      "haze": [230, 160, 60, 34]
+    }
+  },
+  "hint_rules": { "idle_seconds": 45, "deaths": 3 },
+  "dialogue": "dialogue/venus.json",
+  "facts": ["venus_pressure", "venus_temp"],
+  "unlock": []
+}

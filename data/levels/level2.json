@@ -37,12 +37,12 @@
         "footer": "SELECT",
         "max_select": 3,
         "items": [
-          {"id": "parachute", "name": "Parachute", "tag": "ESSENTIAL", "color": "#5EE6D0", "desc": "Main parachute for controlled descent.", "note": "Slowes descent speed dramatically."},
-          {"id": "heat_shield", "name": "Heat Shield", "tag": "ESSENTIAL", "color": "#D29664", "desc": "Protected from burning up during atmospheric entry.", "note": "Critical for survival."},
-          {"id": "sky_crane", "name": "Sky Crane", "tag": "ESSENTIAL", "color": "#5EE6D0", "desc": "Lowering system for final touchdown.", "note": "Essential for safe landing."},
-          {"id": "toy", "name": "Rubber Duck", "tag": "DISTRACT", "color": "#E9BE94", "desc": "Useless item.", "note": "Has no mission purpose."},
-          {"id": "balloon", "name": "Balloon", "tag": "DISTRACT", "color": "#E9BE94", "desc": "Useless item.", "note": "No practical use."},
-          {"id": "disco", "name": "Disco Ball", "tag": "DISTRACT", "color": "#FFB347", "desc": "Useless item.", "note": "No practical use."}
+          {"id": "parachute", "name": "Parachute", "tag": "ESSENTIAL", "color": "#5EE6D0", "desc": "Main parachute for controlled descent.", "note": "Slowes descent speed dramatically.", "icon": "parachute"},
+          {"id": "heat_shield", "name": "Heat Shield", "tag": "ESSENTIAL", "color": "#D29664", "desc": "Protected from burning up during atmospheric entry.", "note": "Critical for survival.", "icon": "shield"},
+          {"id": "sky_crane", "name": "Sky Crane", "tag": "ESSENTIAL", "color": "#5EE6D0", "desc": "Lowering system for final touchdown.", "note": "Essential for safe landing.", "icon": "crane"},
+          {"id": "toy", "name": "Rubber Duck", "tag": "DISTRACT", "color": "#E9BE94", "desc": "Useless item.", "note": "Has no mission purpose.", "icon": "duck"},
+          {"id": "balloon", "name": "Balloon", "tag": "DISTRACT", "color": "#E9BE94", "desc": "Useless item.", "note": "No practical use.", "icon": "balloon"},
+          {"id": "disco", "name": "Disco Ball", "tag": "DISTRACT", "color": "#FFB347", "desc": "Useless item.", "note": "No practical use.", "icon": "disco"}
         ]
       },
       "on_correct": "landing_correct",

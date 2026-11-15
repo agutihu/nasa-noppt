@@ -1,0 +1,72 @@
+{
+  "id": "uranus",
+  "name": "Uranus",
+  "style": "world",
+  "part": { "name": "Thermal Regulator", "color": "#b8f2e6" },
+  "objective": "Cross the methane snowfields and recover the Thermal Regulator.",
+  "briefing": [
+    "Methane snow drifts under a 42-year shadow season.",
+    "Cryo geysers freeze-fast and thaw-slow - move in the calm.",
+    "The ground is slick. Long strides beat short hops."
+  ],
+  "params": {
+    "seed": 29,
+    "moment": {
+      "at": 0.55,
+      "duration": 6.0,
+      "wave": 2,
+      "burst_every": 3.0,
+      "title": "ICE STORM"
+    },
+    "world_length": 5800,
+    "ground_y": 560,
+    "gravity_px": 780,
+    "jump_speed": 700,
+    "move_speed": 260,
+    "friction": 750,
+    "walker_speed": 80,
+    "walker_charge": 145,
+    "ufo_speed": 70,
+    "ufo_fire_interval": 1.9,
+    "plasma_speed": 225,
+    "gap_chance": 0.30,
+    "gap_min": 90,
+    "gap_max": 165,
+    "platform_chance": 0.55,
+    "enemy_density": 0.72,
+    "ufo_chance": 0.40,
+    "hazard_density": 0.50,
+    "hazard_types": ["ice", "geyser", "spikes"],
+    "alien_color": "#7ab8d8",
+    "meteor_color": "#ff9650",
+    "theme": {
+      "sky_top": "#1a4a52",
+      "sky_bottom": "#7fd8d8",
+      "ridge_far": "#3a9aa0",
+      "ridge_near": "#5ab8b8",
+      "ground": "#4a9a9e",
+      "ground_top": "#a8efe6",
+      "ground_edge": "#2a6a70",
+      "accent": "#b8f2e6",
+      "hazard": "#7ce8e0",
+      "bands": 2,
+      "band_colors": ["#5ac8c8", "#a8efe6"],
+      "sky_ring": true,
+      "sky_ring_color": "#b8f2e6",
+      "stars": false,
+      "ridge_style": "shards",
+      "ufo_color": "#b8d8d8"
+    },
+    "weather": {
+      "type": "snow",
+      "density": 90,
+      "wind": [-90, 0],
+      "color": [220, 255, 250, 150],
+      "haze": [110, 220, 220, 24]
+    }
+  },
+  "hint_rules": { "idle_seconds": 45, "deaths": 3 },
+  "dialogue": "dialogue/uranus.json",
+  "facts": ["uranus_tilt"],
+  "unlock": []
+}

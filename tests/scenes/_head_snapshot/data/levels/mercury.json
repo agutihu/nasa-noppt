@@ -1,0 +1,68 @@
+{
+  "id": "mercury",
+  "name": "Mercury",
+  "style": "world",
+  "part": { "name": "Solar Panel Array", "color": "#f7c948" },
+  "objective": "Cross the crater fields, recover the Solar Panel Array, and return to the pod.",
+  "briefing": [
+    "Heat vents erupt on a rhythm - move between the pulses.",
+    "Meteor showers sweep the open crater fields.",
+    "Crawlers charge when you get close. Stomp or shoot them."
+  ],
+  "params": {
+    "seed": 3,
+    "moment": {
+      "at": 0.55,
+      "duration": 6.0,
+      "wave": 2,
+      "burst_every": 3.0,
+      "title": "HEAT VENT SURGE"
+    },
+    "world_length": 4600,
+    "ground_y": 560,
+    "gravity_px": 480,
+    "jump_speed": 640,
+    "move_speed": 250,
+    "friction": 2200,
+    "walker_speed": 70,
+    "walker_charge": 135,
+    "ufo_speed": 60,
+    "ufo_fire_interval": 2.2,
+    "plasma_speed": 200,
+    "gap_chance": 0.30,
+    "gap_min": 90,
+    "gap_max": 150,
+    "platform_chance": 0.55,
+    "enemy_density": 0.60,
+    "ufo_chance": 0.30,
+    "hazard_density": 0.45,
+    "hazard_types": ["geyser", "meteor_zone", "spikes"],
+    "alien_color": "#c98a4b",
+    "meteor_color": "#ff9650",
+    "theme": {
+      "sky_top": "#050608",
+      "sky_bottom": "#241812",
+      "ridge_far": "#2a2320",
+      "ridge_near": "#3a302a",
+      "ground": "#4a4038",
+      "ground_top": "#6b5c50",
+      "ground_edge": "#241d18",
+      "accent": "#f7c948",
+      "hazard": "#ff9c4a",
+      "stars": true,
+      "ridge_style": "craters",
+      "ufo_color": "#b0a890"
+    },
+    "weather": {
+      "type": "heat",
+      "density": 26,
+      "color": [255, 140, 60],
+      "haze": [255, 120, 40, 12],
+      "meteors": true
+    }
+  },
+  "hint_rules": { "idle_seconds": 45, "deaths": 3 },
+  "dialogue": "dialogue/mercury.json",
+  "facts": ["mercury_temps", "mercury_atmosphere"],
+  "unlock": ["tutorial_done"]
+}

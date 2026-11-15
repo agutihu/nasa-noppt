@@ -41,6 +41,12 @@ pip install -r requirements.txt
 
 **Never install plain `pygame`; use `pygame-ce`.**
 
+**No assets needed** — the game is 100% procedural, so it runs fine with an empty `assets/` folder.
+
+**Troubleshooting:** if pygame fails to import, run `pip install pygame-ce` (never plain `pygame`).
+
+**Devs only:** `pip install -r requirements-dev.txt` for code formatting (`black`).
+
 Start the game:
 
 ```bash

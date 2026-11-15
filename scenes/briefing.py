@@ -10,6 +10,7 @@ import pygame
 
 from core import audio, settings, text
 from core.scene import Scene
+from art import environments
 from ui.dialogue_box import DialogueBox
 
 

@@ -81,7 +81,7 @@ class EndingScene(Scene):
         if self.outcome == "win":
             lines = [
                 "Laika completed the mission. She is returning home.",
-                "All seven parts are recovered. The ship is whole.",
+                "She survived and came back with the mission complete.",
                 "Well done, astronaut.",
             ]
         elif self.outcome == "incomplete":
@@ -150,7 +150,7 @@ class EndingScene(Scene):
             )
             text.draw(
                 screen,
-                "Laika is home. The ship is whole. Mission success.",
+                "Laika is home. The mission data is safe. Mission success.",
                 (center_x, 212),
                 24,
                 settings.INK,

@@ -216,8 +216,8 @@ class Level1Scene(Scene):
         # add items to inventory, proceed to eat phase
         # the vending was already confirmed with correct pair; just advance
         self._say("food_correct")
-        # schedule next phase after dialogue
-        self._schedule_next("food_eat", 3.0)
+        # advance to the eating phase once the choice is confirmed
+        self._goto_phase("food_eat")
 
     def _phase_food_eat_init(self) -> None:
         pass
@@ -272,19 +272,21 @@ class Level1Scene(Scene):
     # Food challenge handling
     # ------------------------------------------------------------------
 
+    def _lose_mission(self) -> None:
+        """Laika is lost - the mission failed (e.g. running freely in microgravity)."""
+        audio.play("boom")
+        self.state.finish_mission("lost")
+        self.manager.switch(settings.LEVEL1)  # fresh start
+
     def _show_food_wrong(self) -> None:
         """Show the protocol violated modal and restart the mission."""
-        def _restart() -> None:
-            audio.play("boom")
-            self.state.finish_mission("lost")
-            self.manager.switch(settings.LEVEL1)  # fresh start
 
         self.modal = Modal(
             "FOOD SAFETY PROTOCOL VIOLATED",
             "Open liquids and crumbly food damage the outpost's sensitive circuits and ventilation grilles.\n\n"
             "The mission will restart. Choose sealed drinks and irradiated chicken.",
             buttons=[
-                ("Restart mission", _restart, "danger"),
+                ("Restart mission", self._lose_mission, "danger"),
                 ("Back to menu", lambda: self.manager.switch(settings.MENU), "ghost"),
             ],
             width=660,
@@ -417,7 +419,7 @@ class Level1Scene(Scene):
                     "The bicycle is ready. Would you like to strap in and ride, or run freely?",
                     buttons=[
                         ("Strap in and ride", lambda: self._goto_phase("bike"), "primary"),
-                        ("Run freely", lambda: self._goto_phase("bike_free"), "ghost"),
+                        ("Run freely", self._lose_mission, "ghost"),
                     ],
                     width=500,
                 )
@@ -440,8 +442,8 @@ class Level1Scene(Scene):
         # For simplicity: if player presses alternate keys, timer advances; else no progress
         # Actually, let's just track time and if 22s elapses, success
         if self.t - self.phase_start >= 22.0:
-            self._say("bike_strap")
-            self._schedule_next("rest_intro", 2.0)
+            # Strapped-in ride completed; Laika must now rest.
+            self._goto_phase("rest_intro")
             return
 
         # simple visual: show a pulse that fills; player presses any key to keep going
@@ -485,16 +487,12 @@ class Level1Scene(Scene):
         # find the bay matching choice
         for bay in self.rest_bays:
             if choice in bay["label"] or choice == bay["label"].split()[0].lower():
-                if bay["bad"]:
-                    self._say(bay["reason"].replace("CO₂ accumulation risk", "CO₂ warning"))
-                    # stay in rest phase; the warning is shown via dialogue
-                    # but we consider it done for progression
-                    self._schedule_next("rest_done", 3.0)
-                else:
-                    # correct resting stations
-                    self._say("rest_done")
-                    self._schedule_next("complete", 3.0)
                 self.modal = None
+                if bay["bad"]:
+                    # Wrong location: CO2 accumulation risk. Warn, then the level completes.
+                    self._say(bay["reason"])
+                # Either way the rest sequence resolves and the level advances.
+                self._goto_phase("complete")
                 return
         # fallback
         self.modal = None
@@ -527,10 +525,6 @@ class Level1Scene(Scene):
     # ------------------------------------------------------------------
     # General loop
     # ------------------------------------------------------------------
-
-    def on_enter(self, **data) -> None:
-        # (same as above; kept for interface compliance)
-        pass
 
     def handle_events(self, events: list[pygame.event.Event]) -> None:
         for event in events:

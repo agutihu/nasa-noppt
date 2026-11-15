@@ -37,12 +37,12 @@
         "footer": "SELECT",
         "max_select": 3,
         "items": [
-          {"id": "parachute", "name": "Parachute", "tag": "ESSENTIAL", "color": (94, 230, 208), "desc": "Main parachute for controlled descent.", "note": "Slowes descent speed dramatically."},
-          {"id": "heat_shield", "name": "Heat Shield", "tag": "ESSENTIAL", "color": (210, 150, 100), "desc": "Protected from burning up during atmospheric entry.", "note": "Critical for survival."},
-          {"id": "sky_crane", "name": "Sky Crane", "tag": "ESSENTIAL", "color": (94, 230, 208), "desc": "Lowering system for final touchdown.", "note": "Essential for safe landing."},
-          {"id": "toy", "name": "Rubber Duck", "tag": "DISTRACT", "color": (233, 190, 148), "desc": "Useless item.", "note": "Has no mission purpose."},
-          {"id": "balloon", "name": "Balloon", "tag": "DISTRACT", "color": (233, 190, 148), "desc": "Useless item.", "note": "No practical use."},
-          {"id": "disco", "name": "Disco Ball", "tag": "DISTRACT", "color": (255, 179, 71), "desc": "Useless item.", "note": "No practical use."}
+          {"id": "parachute", "name": "Parachute", "tag": "ESSENTIAL", "color": "#5EE6D0", "desc": "Main parachute for controlled descent.", "note": "Slowes descent speed dramatically."},
+          {"id": "heat_shield", "name": "Heat Shield", "tag": "ESSENTIAL", "color": "#D29664", "desc": "Protected from burning up during atmospheric entry.", "note": "Critical for survival."},
+          {"id": "sky_crane", "name": "Sky Crane", "tag": "ESSENTIAL", "color": "#5EE6D0", "desc": "Lowering system for final touchdown.", "note": "Essential for safe landing."},
+          {"id": "toy", "name": "Rubber Duck", "tag": "DISTRACT", "color": "#E9BE94", "desc": "Useless item.", "note": "Has no mission purpose."},
+          {"id": "balloon", "name": "Balloon", "tag": "DISTRACT", "color": "#E9BE94", "desc": "Useless item.", "note": "No practical use."},
+          {"id": "disco", "name": "Disco Ball", "tag": "DISTRACT", "color": "#FFB347", "desc": "Useless item.", "note": "No practical use."}
         ]
       },
       "on_correct": "landing_correct",
@@ -56,6 +56,12 @@
       "time_limit": 3.0
     },
     {
+      "id": "landing",
+      "objective": "Laika is released from the spacecraft. Monitor the landing.",
+      "dialogue_trigger": "landing",
+      "time_limit": 8
+    },
+    {
       "id": "landing_wrong",
       "objective": "Wrong equipment selected. Please choose only the essential items.",
       "dialogue_trigger": "landing_wrong",
@@ -65,7 +71,7 @@
       "id": "comm_test",
       "objective": "Send an instruction to Laika but do NOT press the send button again. Wait for the response.",
       "dialogue_trigger": "comm_test",
-      "time_limit": 45
+      "time_limit": 30
     },
     {
       "id": "comm_success",

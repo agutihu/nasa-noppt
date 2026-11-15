@@ -11,6 +11,7 @@ import pygame
 from core import audio, levels, settings, text
 from core.scene import Scene
 from core.game_state import GameState
+from art import environments, sprites
 from ui.dialogue_box import DialogueBox
 from ui.hud import HUD
 from ui.vending import Vending
@@ -99,6 +100,16 @@ class Level4Scene(Scene):
         self.camera_button_rect = pygame.Rect(800, 300, 60, 60)
         self.entrance_rect = pygame.Rect(100, 500, 200, 80)
 
+        self.vy = 0.0
+        self.gravity = 900.0
+        self.jump_velocity = 650.0
+        self.rock_ledges = [
+            pygame.Rect(300, 300, 60, 60),
+            pygame.Rect(520, 240, 60, 60),
+            pygame.Rect(760, 300, 60, 60),
+        ]
+        self.entrance_pos = pygame.Vector2(self.params["player_start"])
+
         # objective
         self.objective = ""
 
@@ -146,6 +157,18 @@ class Level4Scene(Scene):
         self._next_phase = phase
         self._next_phase_time = self.state.elapsed + delay
 
+    def _ledge_top(self) -> float:
+        return float(self.params.get("ground_y") or 560)
+
+    def _restart_tunnel(self) -> None:
+        """PPTX: if Laika falls, restart from the initial cave entrance checkpoint."""
+        self.player_pos = pygame.Vector2(self.entrance_pos)
+        self.phase = "explore"
+        self.phase_start = self.state.elapsed
+        self.objective = "Navigate the tunnel using the flashlight. Find the rock sample and camera buttons. Watch for falling rocks!"
+        self.hud.toast("Laika fell - restarting from the cave entrance checkpoint.")
+        audio.play("boom")
+
     # ------------------------------------------------------------------
     # Dialogue
     # ------------------------------------------------------------------
@@ -185,9 +208,11 @@ class Level4Scene(Scene):
             self.flashlight_on = not self.flashlight_on
             audio.play("beep", 0.5)
             self._say("flashlight_on" if not self.flashlight_on else "flashlight_on")
-        # auto-advance after short time
-        if self.t - self.phase_start > 5.0:
-            self._goto_phase("explore")
+        # auto-advance once the flashlight is on - the player moves into the tunnel
+        if self.flashlight_on and self.phase == "flashlight_on":
+            self.phase = "explore"
+            self.phase_start = self.state.elapsed
+            self.objective = "Navigate the tunnel using the flashlight. Find the rock sample and camera buttons. Watch for falling rocks!"
 
     # -- explore --
     def _handle_explore(self, dt: float) -> None:
@@ -206,10 +231,33 @@ class Level4Scene(Scene):
             self.flashlight_on = not self.flashlight_on
             audio.play("beep", 0.5)
 
-        # check fall - if player goes off the left/right edges, game over / restart
+        # check fall - if player goes off the left/right edges, restart at the cave entrance
         # simple check: if player x goes beyond bounds
         if self.player_pos.x < -50 or self.player_pos.x > settings.WIDTH + 50:
-            self._goto_phase("complete")  # simplify: just end
+            self._restart_tunnel()
+
+        # jump between rocks (PPTX: Roblox-style obstacle course jumps in the cave)
+        jump_keys = (keys[pygame.K_2], keys[pygame.K_UP], keys[pygame.K_w], keys[pygame.K_SPACE])
+        jump_height = self.jump_velocity * self.jump_velocity / (2.0 * self.gravity)
+        if any(jump_keys) and not self.dlg.is_active() and self.player_pos.y >= self._ledge_top() - jump_height - 20:
+            self.vy = -self.jump_velocity
+            audio.play("jump", 0.4)
+
+        # simple gravity + movement inside the tunnel
+        self.vy = self.vy + self.gravity * dt
+        self.player_pos.y = self.player_pos.y + self.vy * dt
+        ledge_top = self._ledge_top()
+        if self.player_pos.y > ledge_top + 20:
+            self.player_pos.y = ledge_top + 20
+            self.vy = 0.0
+        for ledge in self.rock_ledges:
+            if self.player_pos.y + 30 >= ledge.y and self.player_pos.y <= ledge.bottom and self.player_pos.x + 25 > ledge.x and self.player_pos.x < ledge.right:
+                self.player_pos.y = ledge.y - 30
+                self.vy = 0.0
+
+        # fall -> restart from the initial cave entrance checkpoint
+        if self.player_pos.y > settings.HEIGHT + 100 or self.player_pos.x < -100 or self.player_pos.x > settings.WIDTH + 100:
+            self._restart_tunnel()
 
         # check button presses
         # rock button
@@ -242,8 +290,12 @@ class Level4Scene(Scene):
         self.t += dt
         if self.state.elapsed - self.phase_start >= 5.0:
             self.state.mark_level_done("tunnel", self.level_time)
-            # Check if this is the final level → show ending
-            if self.state.level_count >= len(settings.LEVEL_IDS):
+            # PPTX: final two minutes are a short victory sequence - Laika returns
+            # to Earth inside the spacecraft and the mission is won.
+            if self.state.elapsed - self.phase_start >= self.total_time - 120.0:
+                self.state.finish_mission("win")
+                self.manager.switch(settings.ENDING)
+            elif self.state.level_count >= len(settings.LEVEL_IDS):
                 self.state.finish_mission("win")
                 self.manager.switch(settings.ENDING)
             else:

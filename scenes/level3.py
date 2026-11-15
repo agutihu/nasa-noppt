@@ -11,6 +11,7 @@ import pygame
 from core import audio, levels, settings, text
 from core.scene import Scene
 from core.game_state import GameState
+from art import environments, sprites
 from ui.dialogue_box import DialogueBox
 from ui.hud import HUD
 from ui.vending import Vending
@@ -70,15 +71,33 @@ class Level3Scene(Scene):
         self.total_photos = 6
         self.cold_timer = 0.0
 
+        self.hud.set_counters([
+            {"label": "PHOTOS", "value": f"0/{self.total_photos}", "color": settings.ACCENT},
+            {"label": "SAMPLES", "value": "0/1", "color": settings.GOLD},
+        ])
+
         # backdrop
-        self.backdrop = environments.mars_surface(settings.WIDTH, settings.HEIGHT, seed=11)
+        self.backdrop, self.rocks = environments.mars_surface(settings.WIDTH, settings.HEIGHT, seed=11)
 
         # player
         self.player_pos = pygame.Vector2(self.params["player_start"])
         self.vending_rect = pygame.Rect(96, 196, 112, 168)
 
-        # photo button rects (simulated)
-        self.photo_button_rects = []
+        # PPTX: rock/soil sample collection + low power mode during the sandstorm
+        self.sample_rect = pygame.Rect(880, 300, 60, 60)
+        self.low_power = False
+        self.sandstorm_pos = pygame.Vector2(self.player_pos)
+        self.cold_period = 45.0
+
+        # marked camera buttons on the surface
+        self.photo_button_rects = [
+            pygame.Rect(300, 260, 60, 60),
+            pygame.Rect(480, 200, 60, 60),
+            pygame.Rect(660, 260, 60, 60),
+            pygame.Rect(840, 200, 60, 60),
+            pygame.Rect(420, 340, 60, 60),
+            pygame.Rect(600, 340, 60, 60),
+        ]
 
         # rest bays
         self.rest_bays = []
@@ -102,6 +121,7 @@ class Level3Scene(Scene):
         self.sandstorm_active = False
         self.hibernation_active = False
         self.photos_taken = 0
+        self.low_power = False
 
         if phase == "photo_intro":
             self._say("photo_intro")
@@ -131,6 +151,12 @@ class Level3Scene(Scene):
     def _schedule_next(self, phase: str, delay: float) -> None:
         self._next_phase = phase
         self._next_phase_time = self.state.elapsed + delay
+
+    def _lose_mission(self) -> None:
+        """The rover was destroyed / the survival run failed."""
+        audio.play("boom")
+        self.state.finish_mission("lost")
+        self.manager.switch(settings.LEVEL3)
 
     # ------------------------------------------------------------------
     # Dialogue
@@ -166,58 +192,89 @@ class Level3Scene(Scene):
     # -- take_photos --
     def _handle_take_photos(self, dt: float) -> None:
         self.t += dt
+        elapsed = self.state.elapsed - self.phase_start
+
+        # PPTX: five minutes to reach and interact with all marked cameras; when
+        # the countdown reaches the 3:30 mark the temperature begins to drop.
+        if elapsed >= 180.0:
+            self.hud.banner("TEMPERATURE DROPPING TO -125°C - ACTIVATE HIBERNATION MODE", 4.0, settings.DANGER)
+            self._goto_phase("cold_alert")
+            return
+        if elapsed >= 300.0:
+            # Five minutes ran out before the survey objectives were met.
+            self._lose_mission()
+            return
+
         keys = pygame.key.get_pressed()
-        # press E near a photo button to take picture
         if keys[pygame.K_e] and not self.dlg.is_active():
-            # check if near any button
             mouse_pos = pygame.Vector2(pygame.mouse.get_pos())
+            # rock / soil sample collection alongside the photography
+            if self.sample_rect.collidepoint(int(mouse_pos[0]), int(mouse_pos[1])):
+                if self.state.add_item("mars_sample"):
+                    self.state.samples = int(getattr(self.state, "samples", 0) or 0) + 1
+                    self.hud.toast("Mars rock sample collected!")
+                    audio.play("confirm", 0.4)
+            # press E near a photo button to take picture
             for i, rect in enumerate(self.photo_button_rects):
                 if rect.collidepoint(int(mouse_pos[0]), int(mouse_pos[1])):
                     self.photos_taken += 1
                     self.hud.toast(f"Photo {self.photos_taken}/{self.total_photos} taken!")
                     audio.play("camera", 0.4)
                     if self.photos_taken >= self.total_photos:
-                        self._say("take_photos_done")
-                        self._schedule_next("sandstorm", 5.0)
+                        if self.state.has_item("mars_sample"):
+                            self._goto_phase("sandstorm")
+                        else:
+                            self.hud.toast("Collect the rock sample before the storm arrives.")
                     return
 
     # -- sandstorm --
     def _handle_sandstorm(self, dt: float) -> None:
         self.t += dt
         self.sandstorm_active = True
-        # visual: darken screen, show storm text
-        # timer: 45 seconds
+        # PPTX: player must find shelter behind the rocks, stop scientific
+        # activities and activate Low Power Mode. Moving through the dust means
+        # the dense dust blocks the solar panels -> the rover fails.
+        moved = pygame.Vector2(self.player_pos) - self.sandstorm_pos
+        if moved.length() > 40.0:
+            self.hud.banner("DUST STORM - SOLAR PANELS UNREACHABLE - ROVER LOST", 4.0, settings.DANGER)
+            self._lose_mission()
+            return
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_l] and not self.dlg.is_active():
+            # PPTX: stop scientific activities / protect the rover systems.
+            self.low_power = True
+            audio.play("power_down", 0.5)
+            self.hud.toast("LOW POWER MODE ACTIVATED - scientific activities halted")
+
         remaining = max(0.0, 45.0 - (self.state.elapsed - self.phase_start))
         minutes = int(remaining // 60)
         seconds = int(remaining % 60)
-        self.hud.toast(f"Sandstorm! Visibility dropping. Find shelter behind rocks. Time left: {minutes:01d}:{seconds:02d}")
-        # after 45s, transition to cold alert
+        self.hud.toast(f"Sandstorm! Visibility dropping. Find shelter behind rocks. Low Power Mode: {'ON' if self.low_power else 'OFF'}. Time left: {minutes:01d}:{seconds:02d}")
         if remaining <= 0:
             self._goto_phase("cold_alert")
 
     # -- cold_alert --
     def _handle_cold_alert(self, dt: float) -> None:
         self.t += dt
-        remaining = max(0.0, 45.0 - (self.state.elapsed - self.phase_start - 45.0))
-        # actually cold alert starts after sandstorm, 45s timer
-        # display cold warning
+        # PPTX: after the storm the temperature drops to -125C; the player must
+        # decide to continue or activate Hibernation Mode.
+        remaining = max(0.0, 45.0 - (self.state.elapsed - self.phase_start))
         self.hud.toast(f"Temperature dropping to -125 °C! Activate Hibernation Mode.")
-        # if player presses H, activate hibernation
         keys = pygame.key.get_pressed()
         if keys[pygame.K_h] and not self.dlg.is_active():
+            # PPTX: activate Hibernation Mode to protect the rover from the cold.
             self.hibernation_active = True
-            self._say("hibernation")
-            self._schedule_next("hibernation", 45.0)
+            self._goto_phase("hibernation")
             return
-        # if timer expires without hibernation
-        if (self.state.elapsed - self.phase_start) > 45.0 + 45.0:
-            # rover destroyed - should we game over?
-            self._goto_phase("complete")
+        if remaining <= 0:
+            # never hibernated in time - the rover was destroyed by the cold
+            self._lose_mission()
 
     # -- hibernation --
     def _handle_hibernation(self, dt: float) -> None:
         self.t += dt
-        remaining = max(0.0, 45.0 - (self.state.elapsed - self.phase_start - 90.0))
+        remaining = max(0.0, 45.0 - (self.state.elapsed - self.phase_start))
         self.hud.toast(f"Hibernation Mode active. Cold protecting rover. Time left: {int(remaining)}s")
         if remaining <= 0:
             self._goto_phase("complete")

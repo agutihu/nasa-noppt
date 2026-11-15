@@ -16,6 +16,7 @@ import math
 import pygame
 
 from core import audio, settings, text
+from core.color import hex_to_rgb
 from ui.button import Button
 
 COLS = 3
@@ -71,6 +72,15 @@ class Vending:
     # --- state --------------------------------------------------------------
     def _exists(self, item_id: str) -> bool:
         return any(item["id"] == item_id for item in self.items)
+
+    def _item_color(self, item: dict) -> tuple[int, int, int]:
+        """Accept hex strings (from JSON) or RGB tuples."""
+        value = item.get("color", settings.ACCENT)
+        if isinstance(value, str):
+            return hex_to_rgb(value, settings.ACCENT)
+        if isinstance(value, (tuple, list)) and len(value) >= 3:
+            return (int(value[0]), int(value[1]), int(value[2]))
+        return settings.ACCENT
 
     def item(self, item_id: str) -> dict | None:
         for entry in self.items:
@@ -291,7 +301,7 @@ class Vending:
 
         icon = pygame.Rect(card.x + 10, card.y + 12, 52, 52)
         pygame.draw.rect(surface, (16, 18, 24), icon, border_radius=7)
-        pygame.draw.rect(surface, item.get("color", settings.DIM), icon, 1, border_radius=7)
+        pygame.draw.rect(surface, self._item_color(item), icon, 1, border_radius=7)
         self._draw_icon(surface, icon, item)
 
         text.draw(
@@ -412,7 +422,7 @@ class Vending:
     # --- tiny procedural icons ---------------------------------------------
     def _draw_icon(self, surface: pygame.Surface, rect: pygame.Rect, item: dict) -> None:
         kind = item.get("icon", "box")
-        color = item.get("color", settings.ACCENT)
+        color = self._item_color(item)
         cx, cy = rect.center
         if kind == "drink":
             pygame.draw.rect(surface, color, (cx - 10, cy - 14, 20, 28), border_radius=3)

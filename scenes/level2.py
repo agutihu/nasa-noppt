@@ -11,6 +11,7 @@ import pygame
 from core import audio, levels, settings, text
 from core.scene import Scene
 from core.game_state import GameState
+from art import environments, sprites
 from ui.dialogue_box import DialogueBox
 from ui.hud import HUD
 from ui.vending import Vending
@@ -95,12 +96,22 @@ class Level2Scene(Scene):
         self.vending = None
 
         if phase == "landing_correct":
-            self._say("landing_correct")
-            self._schedule_next("comm_test", 3.0)
+            # Equipment confirmed - move into the landing observation phase.
+            self._goto_phase("landing")
+            return
+        if phase == "landing":
+            # PPTX: player monitors Laika's landing from the simulator.
+            self.phase = "landing"
+            self.phase_start = self.state.elapsed
+            self.objective = "Laika is released from the spacecraft. Monitor the landing."
+            self._say("landing")
             return
         if phase == "landing_wrong":
+            # Wrong kit - send the player back to the equipment vending machine.
+            self.phase = "landing_briefing"
+            self.phase_start = self.state.elapsed
+            self.objective = "Wrong equipment selected. Please choose only the essential items."
             self._say("landing_wrong")
-            self._schedule_next("intro", 2.0)
             return
         if phase == "complete":
             self._schedule_next("briefing", 3.0)
@@ -204,22 +215,30 @@ class Level2Scene(Scene):
             self.hud.toast(f"Essential items missing: {', '.join(wrong)}")
             self._goto_phase("landing_wrong")
 
+    # -- landing --
+    def _handle_landing(self, dt: float) -> None:
+        self.t += dt
+        # PPTX: the player monitors the landing in the simulator; then the comm test begins.
+        if self.state.elapsed - self.phase_start >= 8.0:
+            self._goto_phase("comm_test")
+
     # -- comm_test --
     def _handle_comm_test(self, dt: float) -> None:
         self.t += dt
-        # display timer and instruction
-        remaining = max(0.0, 45.0 - (self.state.elapsed - self.phase_start))
+        # PPTX: a "Send Message" button sits beside a 30-second countdown; the
+        # player must NOT press it. Waiting is the correct decision.
+        remaining = max(0.0, 30.0 - (self.state.elapsed - self.phase_start))
         minutes = int(remaining // 60)
         seconds = int(remaining % 60)
-        self.hud.toast(f"Communications delay: {minutes:01d}:{seconds:02d}. Do NOT press the button.")
+        self.hud.toast(f"SEND MESSAGE  {minutes:01d}:{seconds:02d}  -  DO NOT PRESS. Waiting for Laika...")
         # if player presses space, penalize
         keys = pygame.key.get_pressed()
         if keys[pygame.K_SPACE] and not self.dlg.is_active():
-            self.hud.toast("Mission control warns: Do not send another message!")
+            self.hud.toast("Mission control warns: do not send another message!")
             audio.play("deny")
         if remaining <= 0:
-            self._say("comm_success")
-            self._schedule_next("complete", 3.0)
+            # waited long enough - Laika's safe-landing confirmation arrives
+            self._goto_phase("complete")
 
     # -- complete --
     def _handle_complete(self, dt: float) -> None:
@@ -251,6 +270,14 @@ class Level2Scene(Scene):
                     self.manager.push(settings.PAUSE, parent=self)
                 return
 
+            # PPTX: the "Send Message" button must not be pressed - waiting is correct.
+            if self.phase == "comm_test" and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                pos = pygame.mouse.get_pos()
+                comm_btn = pygame.Rect(540, 300, 200, 56)
+                if comm_btn.collidepoint(pos[0], pos[1]):
+                    self.hud.toast("Mission control warns: do not send another message!")
+                    audio.play("deny")
+
     def update(self, dt: float) -> None:
         self.t += dt
         self.level_time = self.state.elapsed - self.phase_start
@@ -259,6 +286,8 @@ class Level2Scene(Scene):
             self._handle_intro(dt)
         elif self.phase == "landing_briefing":
             self._handle_landing_briefing(dt)
+        elif self.phase == "landing":
+            self._handle_landing(dt)
         elif self.phase == "comm_test":
             self._handle_comm_test(dt)
         elif self.phase == "complete":
@@ -286,6 +315,16 @@ class Level2Scene(Scene):
         # draw vending if active
         if self.vending:
             self.vending.draw(self.screen)
+
+        # PPTX: "Send Message" button with a live countdown; the player must NOT press it.
+        if self.phase == "comm_test":
+            remaining = max(0.0, 30.0 - (self.state.elapsed - self.phase_start))
+            mm = int(remaining // 60)
+            ss = int(remaining % 60)
+            comm_btn = pygame.Rect(540, 300, 200, 56)
+            pygame.draw.rect(surface, (30, 26, 36), comm_btn, border_radius=10)
+            pygame.draw.rect(surface, settings.ACCENT, comm_btn, 2, border_radius=10)
+            text.draw(surface, f"SEND MESSAGE  {mm:02d}:{ss:02d}", (comm_btn.centerx, comm_btn.centery), 16, settings.INK, display=True, center=True, shadow=False, max_width=176)
 
         # draw objective banner
         if self.objective:

@@ -18,12 +18,21 @@ class HUD:
         self.level_name = level_name
         self.t = 0.0
         self.banner_time = 0.0
+        self.banner_text = ""
+        self.banner_tone = settings.ACCENT
         self.toast_time = 0.0
+        self.toast_text = ""
+        self.objective = ""
         self.timer: float | None = None
         self.counters: list[dict] = []
         self.meters: list[Meter] = []
         self.accent = accent or settings.ACCENT
         self.challenge = ""
+        self.hint_prompt = False
+        self.checklist: list[dict] = []
+        self.target: tuple[str, tuple[int, int, int]] = ("Mission", settings.ACCENT)
+        self.hearts_current = 1
+        self.hearts_max = 1
 
     def set_hearts(self, current: int | None, maximum: int | None) -> None:
         self.hearts_current = current

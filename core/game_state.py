@@ -1,7 +1,8 @@
 """The single shared state object.
 
-Scenes read and write this; nothing else in the game is global. Difficulty is applied here
-so no level ever branches on it.
+Scenes read and write this; nothing else in the game is global. It holds mission
+progress, science facts unlocked, the small inventory the outpost vending machines
+dispense, and the player's preferences.
 """
 
 from __future__ import annotations
@@ -10,57 +11,48 @@ from dataclasses import dataclass, field
 
 from core import levels, save, settings
 
-MULTIPLIERS = {
-    "easy": {"speed": 0.75, "time": 1.25, "hearts": 5, "hint": 20.0},
-    "normal": {"speed": 1.00, "time": 1.00, "hearts": 3, "hint": 45.0},
-    # hint 0.0 means "only when the player asks"
-    "hard": {"speed": 1.25, "time": 0.85, "hearts": 2, "hint": 0.0},
-}
-
 
 @dataclass
 class GameState:
-    parts: list[str] = field(default_factory=list)
+    mission_started: bool = False
+    levels_done: list[str] = field(default_factory=list)
+    current_level: str | None = None
     facts: list[str] = field(default_factory=list)
+    inventory: list[str] = field(default_factory=list)
+    photos: int = 0
+    samples: int = 0
     deaths: int = 0
     difficulty: str = "normal"
-    player_name: str = "Pilot"
-    current_level: str | None = None
+    player_name: str = "Astronaut"
     elapsed: float = 0.0
-    tutorial_done: bool = False
+    outcome: str | None = None
     volume: float = 0.8
     muted: bool = False
     text_scale: float = 1.0
-    levels_done: list[str] = field(default_factory=list)
+    show_hints: bool = True
     best_times: dict[str, float] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if self.difficulty not in MULTIPLIERS:
+        if self.difficulty not in settings.DIFFICULTIES:
             self.difficulty = "normal"
         self.volume = max(0.0, min(1.0, float(self.volume)))
         self.text_scale = max(0.8, min(1.6, float(self.text_scale)))
 
-    # --- parts --------------------------------------------------------------
-    def add_part(self, name: str | None) -> bool:
-        if not name or name in self.parts:
+    # --- inventory ----------------------------------------------------------
+    def add_item(self, item_id: str | None) -> bool:
+        if not item_id or item_id in self.inventory:
             return False
-        self.parts.append(name)
-        self.save()
+        self.inventory.append(item_id)
         return True
 
-    def has_part(self, name: str | None) -> bool:
-        return bool(name) and name in self.parts
+    def has_item(self, item_id: str | None) -> bool:
+        return bool(item_id) and item_id in self.inventory
 
-    @property
-    def part_count(self) -> int:
-        return len(self.parts)
-
-    def required_parts(self) -> list[str]:
-        return levels.required_parts()
-
-    def all_parts(self) -> bool:
-        required = self.required_parts()
-        return bool(required) and all(self.has_part(part) for part in required)
+    def take_item(self, item_id: str) -> bool:
+        if item_id not in self.inventory:
+            return False
+        self.inventory.remove(item_id)
+        return True
 
     # --- facts --------------------------------------------------------------
     def add_fact(self, key: str | None) -> bool:
@@ -77,23 +69,32 @@ class GameState:
     def fact_count(self) -> int:
         return len(self.facts)
 
-    # --- difficulty ---------------------------------------------------------
-    def _multipliers(self) -> dict:
-        return MULTIPLIERS.get(self.difficulty, MULTIPLIERS["normal"])
+    def hearts(self) -> int:
+        """Return the number of hearts based on difficulty."""
+        order = list(settings.DIFFICULTIES)
+        idx = order.index(self.difficulty) if self.difficulty in order else 1
+        return max(1, 5 - idx)
 
     def scale_speed(self, value: float) -> float:
-        return value * self._multipliers()["speed"]
+        """Scale speed based on difficulty multiplier."""
+        order = list(settings.DIFFICULTIES)
+        idx = order.index(self.difficulty) if self.difficulty in order else 1
+        multipliers = {"easy": 0.75, "normal": 1.0, "hard": 1.25}
+        return value * multipliers.get(order[idx], 1.0)
 
-    def scale_time(self, value: float) -> float:
-        return value * self._multipliers()["time"]
+    @property
+    def part_count(self) -> int:
+        return len(self.inventory)
 
-    def hearts(self) -> int:
-        return int(self._multipliers()["hearts"])
+    def required_parts(self) -> list[str]:
+        return list(self.inventory)
 
-    def hint_idle(self) -> float:
-        return float(self._multipliers()["hint"])
+    def all_parts(self) -> bool:
+        """Check if all mission levels are complete."""
+        return self.level_count >= len(settings.LEVEL_IDS)
 
-    def next_difficulty(self) -> None:
+    # --- difficulty ---------------------------------------------------------
+        order = list(settings.DIFFICULTIES)
         order = list(settings.DIFFICULTIES)
         index = (order.index(self.difficulty) + 1) % len(order)
         self.difficulty = order[index]
@@ -104,9 +105,14 @@ class GameState:
         self.save()
         return self.text_scale
 
+    def toggle_hints(self) -> bool:
+        self.show_hints = not self.show_hints
+        self.save()
+        return self.show_hints
+
     # --- progress -----------------------------------------------------------
     def mark_level_done(self, level_id: str, time_seconds: float | None = None) -> bool:
-        """Record a mission win; keeps the best clear time per level."""
+        """Record a cleared level; keeps the best time per level."""
         if level_id not in self.levels_done:
             self.levels_done.append(level_id)
         if time_seconds is not None:
@@ -122,46 +128,69 @@ class GameState:
     def best_time(self, level_id: str) -> float | None:
         return self.best_times.get(level_id)
 
-    def is_unlocked(self, planet: dict) -> bool:
-        rules = planet.get("unlock", []) or []
-        if "tutorial_done" in rules and not self.tutorial_done:
+    def is_unlocked(self, level_id: str) -> bool:
+        """Sequential campaign: each level opens after the previous one is cleared."""
+        order = list(settings.LEVEL_IDS)
+        if level_id not in order:
             return False
-        if "all_parts" in rules and not self.all_parts():
-            return False
-        # sequential campaign: each mission opens after the previous one is won
-        previous = levels.previous_mission(planet["id"])
-        if previous is not None and not self.is_level_done(previous):
-            return False
-        return True
+        index = order.index(level_id)
+        return index == 0 or order[index - 1] in self.levels_done
 
-    def reset(self) -> None:
-        self.parts.clear()
-        self.facts.clear()
-        self.deaths = 0
-        self.current_level = None
-        self.elapsed = 0.0
-        self.tutorial_done = False
+    def next_level_id(self) -> str | None:
+        for level_id in settings.LEVEL_IDS:
+            if not self.is_level_done(level_id):
+                return level_id
+        return None
+
+    def complete_level(self, level_id: str, time_seconds: float | None = None) -> str | None:
+        """Mark a level cleared and return the next one (None on the finale)."""
+        self.mark_level_done(level_id, time_seconds)
+        return levels.next_level(level_id)
+
+    @property
+    def level_count(self) -> int:
+        return len(self.levels_done)
+
+    def reset_mission(self) -> None:
+        self.mission_started = False
         self.levels_done.clear()
+        self.current_level = None
+        self.facts.clear()
+        self.inventory.clear()
+        self.photos = 0
+        self.samples = 0
+        self.deaths = 0
+        self.elapsed = 0.0
+        self.outcome = None
         self.best_times.clear()
-        # text_scale/volume/muted survive a reset on purpose (player preferences)
+        # text_scale/volume/muted/show_hints survive a reset on purpose
         save.clear()
+
+    def finish_mission(self, outcome: str) -> None:
+        self.outcome = outcome
+        self.current_level = None
+        self.save()
 
     # --- persistence --------------------------------------------------------
     def to_dict(self) -> dict:
         return {
             "version": save.VERSION,
-            "parts": list(self.parts),
+            "mission_started": self.mission_started,
+            "levels_done": list(self.levels_done),
+            "current_level": self.current_level,
             "facts": list(self.facts),
+            "inventory": list(self.inventory),
+            "photos": self.photos,
+            "samples": self.samples,
             "deaths": self.deaths,
             "difficulty": self.difficulty,
             "player_name": self.player_name,
-            "current_level": self.current_level,
             "elapsed": round(self.elapsed, 2),
-            "tutorial_done": self.tutorial_done,
+            "outcome": self.outcome,
             "volume": round(self.volume, 2),
             "muted": self.muted,
             "text_scale": round(self.text_scale, 2),
-            "levels_done": list(self.levels_done),
+            "show_hints": self.show_hints,
             "best_times": {key: round(value, 2) for key, value in self.best_times.items()},
         }
 
@@ -171,22 +200,46 @@ class GameState:
             return [str(item) for item in value] if isinstance(value, list) else []
 
         return cls(
-            parts=_list(data.get("parts")),
+            mission_started=bool(data.get("mission_started", True)),
+            levels_done=_list(data.get("levels_done")),
+            current_level=data.get("current_level"),
             facts=_list(data.get("facts")),
+            inventory=_list(data.get("inventory")),
+            photos=int(data.get("photos", 0) or 0),
+            samples=int(data.get("samples", 0) or 0),
             deaths=int(data.get("deaths", 0) or 0),
             difficulty=str(data.get("difficulty", "normal")),
-            player_name=str(data.get("player_name", "Pilot"))[:16],
-            current_level=data.get("current_level"),
+            player_name=str(data.get("player_name", "Astronaut"))[:16],
             elapsed=float(data.get("elapsed", 0.0) or 0.0),
-            tutorial_done=bool(data.get("tutorial_done", False)),
+            outcome=data.get("outcome"),
             volume=float(data.get("volume", 0.8) or 0.8),
             muted=bool(data.get("muted", False)),
-            levels_done=_list(data.get("levels_done")),
+            text_scale=float(data.get("text_scale", 1.0) or 1.0),
+            show_hints=bool(data.get("show_hints", True)),
             best_times={
                 str(key): float(value)
                 for key, value in (data.get("best_times") or {}).items()
             },
         )
+
+    def _copy_from(self, other: "GameState") -> None:
+        self.mission_started = other.mission_started
+        self.levels_done = other.levels_done
+        self.current_level = other.current_level
+        self.facts = other.facts
+        self.inventory = other.inventory
+        self.photos = other.photos
+        self.samples = other.samples
+        self.deaths = other.deaths
+        self.difficulty = other.difficulty
+        self.player_name = other.player_name
+        self.elapsed = other.elapsed
+        self.outcome = other.outcome
+        self.volume = other.volume
+        self.muted = other.muted
+        self.text_scale = other.text_scale
+        self.show_hints = other.show_hints
+        self.best_times = other.best_times
 
     def save(self) -> bool:
         return save.write(self.to_dict())
@@ -195,23 +248,38 @@ class GameState:
         data = save.read()
         if not data:
             return False
-        restored = GameState.from_dict(data)
-        self.parts = restored.parts
-        self.facts = restored.facts
-        self.deaths = restored.deaths
-        self.difficulty = restored.difficulty
-        self.current_level = restored.current_level
-        self.elapsed = restored.elapsed
-        self.tutorial_done = restored.tutorial_done
-        self.volume = restored.volume
-        self.muted = restored.muted
-        self.text_scale = restored.text_scale
-        self.levels_done = restored.levels_done
-        self.best_times = restored.best_times
-        self.player_name = restored.player_name
+
+        # preferences survive a version bump; old campaign progress does not
+        if int(data.get("version", 0) or 0) != save.VERSION:
+            self.volume = max(0.0, min(1.0, float(data.get("volume", self.volume) or 0.8)))
+            self.muted = bool(data.get("muted", self.muted))
+            self.text_scale = max(0.8, min(1.6, float(data.get("text_scale", self.text_scale) or 1.0)))
+            self.difficulty = str(data.get("difficulty", self.difficulty))
+            if self.difficulty not in settings.DIFFICULTIES:
+                self.difficulty = "normal"
+            return False
+
+        self._copy_from(GameState.from_dict(data))
         return True
 
     # --- derived text -------------------------------------------------------
+    def progress_line(self) -> str:
+        return (
+            f"{self.level_count}/{len(settings.LEVEL_IDS)} levels  |  "
+            f"{self.fact_count} facts  |  {self.deaths} losses"
+        )
+
     def status_line(self) -> str:
-        required = len(self.required_parts())
-        return f"{self.part_count}/{required} parts  |  {len(self.facts)} facts  |  {self.deaths} losses"
+        return f"{len(self.inventory)}/{max(1, len(self.inventory))} parts  |  {len(self.facts)} facts  |  {self.deaths} losses"
+
+    def mission_line(self) -> str:
+        if self.outcome == "win":
+            return "Mission complete - Laika is home."
+        if self.outcome == "lost":
+            return "Laika did not return."
+        if self.outcome == "incomplete":
+            return "Home, but the survey is unfinished."
+        return "Mars survey in progress"
+
+    def science_line(self) -> str:
+        return f"{self.photos} photos  |  {self.samples} samples  |  {self.fact_count} facts"

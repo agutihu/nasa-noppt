@@ -1,194 +1,279 @@
-"""Heads-up display: hearts, part inventory, objective and timer."""
+"""Mission HUD: level identity, objective, timer, counters, gauges, banners.
+
+Every level uses the same strip so the four missions feel like one interface.
+"""
 
 from __future__ import annotations
 
 import pygame
 
-from art import sprites
-from core import color, levels, settings, text
+from core import settings, text
+from ui.meter import Meter
 
 
 class HUD:
-    def __init__(self, state, cfg: dict | None = None) -> None:
+    def __init__(self, state, cfg: dict | None = None, level_name: str = "", accent: tuple[int, int, int] | None = None) -> None:
         self.state = state
         self.cfg = cfg or {}
-        self.hearts_current: int | None = None
-        self.hearts_max: int | None = None
-        self.timer: float | None = None
-        self.objective: str = self.cfg.get("objective", "")
-        self.hint_prompt = False
+        self.level_name = level_name
         self.t = 0.0
-        self.target: tuple[str, tuple[int, int, int]] | None = None
-        self.checklist: list[dict] = []
-        self._planet_colors: dict[str, tuple[int, int, int]] = {}
-        for planet in levels.load_planets()["planets"]:
-            part = planet.get("part")
-            if part:
-                self._planet_colors[part] = color.hex_to_rgb(planet.get("color", "#8fa3c8"))
+        self.banner_time = 0.0
+        self.toast_time = 0.0
+        self.timer: float | None = None
+        self.counters: list[dict] = []
+        self.meters: list[Meter] = []
+        self.accent = accent or settings.ACCENT
+        self.challenge = ""
 
-    # --- data ---------------------------------------------------------------
     def set_hearts(self, current: int | None, maximum: int | None) -> None:
         self.hearts_current = current
         self.hearts_max = maximum
 
-    def set_timer(self, seconds: float | None) -> None:
-        self.timer = seconds
+    def set_checklist(self, items: list[dict]) -> None:
+        self.checklist = list(items)
+
+    def set_target(self, name: str, color: tuple[int, int, int]) -> None:
+        """Set the labeled part target in the top bar."""
+        self.target = (name, color)
+        self.objective = ""
+        self.timer: float | None = None
+        self.counters: list[dict] = []
+        self.meters: list[Meter] = []
+        self._meter_index: dict[str, Meter] = {}
+        self.banner_text = ""
+        self.banner_time = 0.0
+        self.banner_tone = settings.ACCENT
+        self.toast_text = ""
+        self.toast_time = 0.0
+        self.hint_prompt = False
+        self.t = 0.0
+
+    # --- data ---------------------------------------------------------------
+    def set_level(self, name: str, challenge: str = "") -> None:
+        self.level_name = name
+        self.challenge = challenge
 
     def set_objective(self, value: str) -> None:
         self.objective = value
 
-    def set_target(self, name: str, color: tuple[int, int, int]) -> None:
-        """Show the labeled part this level is about, right in the top bar."""
-        self.target = (name, color)
+    def set_timer(self, seconds: float | None) -> None:
+        self.timer = None if seconds is None else max(0.0, float(seconds))
 
-    def set_checklist(self, items: list[dict]) -> None:
-        """Collectible tracker shown in a small box under the top bar."""
-        self.checklist = list(items)
+    def set_counters(self, counters: list[dict]) -> None:
+        """``[{"label": "PHOTOS", "value": "2/6", "color": ...}]``"""
+        self.counters = list(counters)
+
+    def update_counter(self, label: str, value: str, color: tuple[int, int, int] | None = None) -> None:
+        for counter in self.counters:
+            if counter["label"] == label:
+                counter["value"] = value
+                if color:
+                    counter["color"] = color
+                return
+
+    def add_meter(self, label: str, value: float, maximum: float, color, **kwargs) -> Meter:
+        index = len(self.meters)
+        rect = (settings.WIDTH - 286, 70 + index * 46, 258, 40)
+        meter = Meter(rect, label, color, maximum, show_value=True, **kwargs)
+        meter.set(value)
+        self.meters.append(meter)
+        self._meter_index[label] = meter
+        return meter
+
+    def meter(self, label: str) -> Meter | None:
+        return self._meter_index.get(label)
+
+    def set_meter(self, label: str, value: float) -> None:
+        meter = self._meter_index.get(label)
+        if meter is not None:
+            meter.set(value)
+
+    def banner(self, message: str, seconds: float = 3.0, tone=None) -> None:
+        self.banner_text = message
+        self.banner_time = max(0.5, seconds)
+        self.banner_tone = tone or settings.ACCENT
+
+    def toast(self, message: str, seconds: float = 2.4) -> None:
+        self.toast_text = message
+        self.toast_time = max(0.5, seconds)
 
     def update(self, dt: float) -> None:
         self.t += dt
+        self.banner_time = max(0.0, self.banner_time - dt)
+        self.toast_time = max(0.0, self.toast_time - dt)
+        for meter in self.meters:
+            meter.update(dt)
 
     # --- drawing ------------------------------------------------------------
     def draw(self, surface: pygame.Surface) -> None:
-        bar = pygame.Surface((settings.WIDTH, 56), pygame.SRCALPHA)
-        bar.fill((4, 8, 18, 205))
+        self._draw_top_bar(surface)
+        self._draw_counters(surface)
+        self._draw_meters(surface)
+        self._draw_banner(surface)
+        self._draw_toast(surface)
+        if self.hint_prompt:
+            self._draw_hint_prompt(surface)
+
+    def _draw_top_bar(self, surface: pygame.Surface) -> None:
+        bar = pygame.Surface((settings.WIDTH, 60), pygame.SRCALPHA)
+        bar.fill((8, 6, 10, 214))
         surface.blit(bar, (0, 0))
-        pygame.draw.line(surface, settings.PANEL_EDGE, (0, 56), (settings.WIDTH, 56), 1)
+        pygame.draw.line(surface, settings.PANEL_EDGE, (0, 60), (settings.WIDTH, 60), 1)
+        pygame.draw.line(surface, self.accent, (0, 59), (170, 59), 2)
 
-        x = 24
-        if self.hearts_max:
-            for index in range(self.hearts_max):
-                filled = self.hearts_current is not None and index < self.hearts_current
-                sprites.draw_heart(surface, (x + 10, 28), 18, filled=filled)
-                x += 26
-            x += 12
-
-        # part inventory
-        text.draw(surface, "PARTS", (x, 20), 16, settings.DIM, shadow=False)
-        x += 56
-        collected = 0
-        for part, part_color in self._planet_colors.items():
-            owned = self.state.has_part(part)
-            center = (x + 10, 28)
-            if owned:
-                sprites.draw_part(surface, center, 10, part_color, self.t, glow=False)
-                collected += 1
-            else:
-                pygame.draw.circle(surface, settings.PANEL_EDGE, center, 10, 1)
-                pygame.draw.circle(surface, (20, 30, 48), center, 8)
-            x += 30
-
-        if self._planet_colors:
+        text.draw(
+            surface,
+            self.level_name.upper(),
+            (22, 13),
+            14,
+            self.accent,
+            display=True,
+        )
+        if self.challenge:
+            chip_w = text.measure(self.challenge.upper(), 12, True)[0] + 20
+            chip = pygame.Rect(22, 34, chip_w, 18)
+            pygame.draw.rect(surface, (8, 14, 18), chip, border_radius=9)
+            pygame.draw.rect(surface, self.accent, chip, 1, border_radius=9)
             text.draw(
                 surface,
-                f"{collected}/{len(self._planet_colors)}",
-                (x + 2, 20),
-                16,
-                settings.DIM,
-                shadow=False,
-            )
-            x += 40
-
-        # labeled mission target part
-        if self.target:
-            name, part_color = self.target
-            owned = self.state.has_part(name)
-            chip_w = text.measure(name, 15)[0] + 46
-            rect = pygame.Rect(x, 12, chip_w, 30)
-            pygame.draw.rect(surface, (8, 14, 26), rect, border_radius=15)
-            pygame.draw.rect(surface, settings.GREEN if owned else part_color, rect, 1, border_radius=15)
-            sprites.draw_part(surface, (rect.x + 16, rect.centery), 8, part_color, self.t, glow=False)
-            text.draw(
-                surface,
-                name,
-                (rect.x + 30, rect.centery),
-                15,
-                settings.DIM if owned else settings.INK,
-                middle=True,
-                shadow=False,
-            )
-
-        # timer
-        if self.timer is not None:
-            remaining = max(0.0, float(self.timer))
-            minutes = int(remaining // 60)
-            seconds = int(remaining % 60)
-            danger = remaining <= 15.0
-            pulse = 1.0
-            if danger:
-                pulse = 0.65 + 0.35 * abs(pygame.math.Vector2(1, 0).rotate(self.t * 360).x)
-            timer_color = settings.DANGER if danger else settings.INK
-            text.draw(
-                surface,
-                f"{minutes:01d}:{seconds:02d}",
-                (settings.WIDTH - 26, 12),
-                26,
-                timer_color,
+                self.challenge.upper(),
+                (chip.centerx, chip.centery - 1),
+                12,
+                self.accent,
                 display=True,
-                right=True,
-                alpha=int(255 * pulse) if danger else 255,
+                center=True,
+                middle=True,
             )
 
-        self._draw_checklist(surface)
-
-        # objective
         if self.objective:
             text.draw(
                 surface,
                 self.objective,
-                (24, 66),
-                20,
-                settings.DIM,
-                max_width=settings.WIDTH // 2 - 150,
+                (settings.WIDTH // 2, 22),
+                21,
+                settings.INK,
+                center=True,
+                max_width=560,
                 shadow=False,
             )
 
-        if self.hint_prompt:
-            label = "H  Laika hint"
-            width = text.measure(label, 18)[0] + 24
-            rect = pygame.Rect(settings.WIDTH - width - 22, settings.HEIGHT - 44, width, 26)
-            pygame.draw.rect(surface, (8, 14, 26), rect, border_radius=13)
-            pygame.draw.rect(surface, settings.PANEL_EDGE, rect, 1, border_radius=13)
+        if self.timer is not None:
+            remaining = max(0.0, self.timer)
+            minutes = int(remaining // 60)
+            seconds = int(remaining % 60)
+            danger = remaining <= 20.0
+            color = settings.DANGER if danger else settings.INK
+            alpha = 255
+            if danger:
+                alpha = 165 + int(90 * abs(pygame.math.Vector2(1, 0).rotate(self.t * 320).x))
             text.draw(
                 surface,
-                label,
-                (rect.centerx, rect.centery),
-                18,
-                settings.ACCENT,
-                center=True,
-                middle=True,
+                f"{minutes:01d}:{seconds:02d}",
+                (settings.WIDTH - 24, 10),
+                24,
+                color,
+                display=True,
+                right=True,
+                alpha=alpha,
+            )
+            text.draw(
+                surface,
+                "TIME LEFT",
+                (settings.WIDTH - 24, 38),
+                12,
+                settings.FAINT,
+                right=True,
                 shadow=False,
             )
 
-    def _draw_checklist(self, surface: pygame.Surface) -> None:
-        """Small top-center box: everything collectible in this world, ticked as gathered."""
-        if not self.checklist:
+    def _draw_counters(self, surface: pygame.Surface) -> None:
+        if not self.counters:
             return
-        rows = len(self.checklist)
-        height = 24 + rows * 19 + 8
-        rect = pygame.Rect(0, 0, 236, height)
-        rect.midtop = (settings.WIDTH // 2, 62)
-        panel = pygame.Surface(rect.size, pygame.SRCALPHA)
-        panel.fill((6, 11, 24, 205))
-        surface.blit(panel, rect.topleft)
-        pygame.draw.rect(surface, settings.PANEL_EDGE, rect, 1, border_radius=10)
+        x = 24
+        for counter in self.counters:
+            label = str(counter.get("label", ""))
+            value = str(counter.get("value", ""))
+            color = counter.get("color", self.accent)
+            label_w = text.measure(label, 13, True)[0]
+            value_w = text.measure(value, 20)[0]
+            width = label_w + value_w + 34
+            rect = pygame.Rect(x, 72, width, 30)
+            panel = pygame.Surface(rect.size, pygame.SRCALPHA)
+            panel.fill((8, 6, 10, 190))
+            surface.blit(panel, rect.topleft)
+            pygame.draw.rect(surface, settings.PANEL_EDGE, rect, 1, border_radius=15)
+            pygame.draw.circle(surface, color, (rect.x + 13, rect.centery), 4)
+            text.draw(surface, label, (rect.x + 24, rect.centery - 6), 13, settings.DIM, display=True, shadow=False)
+            text.draw(surface, value, (rect.right - 12, rect.centery - 10), 20, color, right=True, shadow=False)
+            x += width + 8
+
+    def _draw_meters(self, surface: pygame.Surface) -> None:
+        if not self.meters:
+            return
+        top = self.meters[0].rect.y - 10
+        bottom = self.meters[-1].rect.y + self.meters[-1].rect.height + 6
+        panel = pygame.Surface((276, bottom - top + 4), pygame.SRCALPHA)
+        panel.fill((8, 6, 10, 170))
+        surface.blit(panel, (settings.WIDTH - 294, top))
+        pygame.draw.rect(surface, settings.PANEL_EDGE, (settings.WIDTH - 294, top, 276, bottom - top + 4), 1, border_radius=8)
+        for meter in self.meters:
+            meter.draw(surface)
+
+    def _draw_banner(self, surface: pygame.Surface) -> None:
+        if self.banner_time <= 0.0 or not self.banner_text:
+            return
+        fade = min(1.0, self.banner_time / 0.4)
+        alpha = int(255 * fade)
+        band = pygame.Surface((settings.WIDTH, 52), pygame.SRCALPHA)
+        band.fill((8, 6, 10, int(210 * fade)))
+        surface.blit(band, (0, 128))
+        pygame.draw.line(surface, self.banner_tone, (0, 128), (settings.WIDTH, 128), 1)
+        pygame.draw.line(surface, self.banner_tone, (0, 180), (settings.WIDTH, 180), 1)
         text.draw(
-            surface, "COLLECT", (rect.centerx, rect.top + 12), 13,
-            settings.FAINT, center=True, shadow=False,
+            surface,
+            self.banner_text,
+            (settings.WIDTH // 2, 142),
+            22,
+            self.banner_tone,
+            display=True,
+            center=True,
+            alpha=alpha,
         )
-        y = rect.top + 30
-        for item in self.checklist:
-            dot = item.get("color", settings.ACCENT)
-            done = bool(item.get("done"))
-            if done:
-                pygame.draw.circle(surface, settings.GREEN, (rect.left + 16, y + 8), 4)
-                pygame.draw.line(
-                    surface, settings.PANEL_EDGE,
-                    (rect.left + 28, y + 8),
-                    (rect.left + 28 + text.measure(item["label"], 15)[0], y + 8), 1,
-                )
-                text.draw(surface, item["label"], (rect.left + 28, y), 15, settings.FAINT, shadow=False)
-            else:
-                pygame.draw.circle(surface, dot, (rect.left + 16, y + 8), 4, 1)
-                text.draw(surface, item["label"], (rect.left + 28, y), 15, settings.INK, shadow=False)
-            y += 19
+
+    def _draw_toast(self, surface: pygame.Surface) -> None:
+        if self.toast_time <= 0.0 or not self.toast_text:
+            return
+        fade = min(1.0, self.toast_time / 0.35)
+        width = min(760, text.measure(self.toast_text, 21)[0] + 48)
+        rect = pygame.Rect(0, 0, width, 42)
+        rect.midbottom = (settings.WIDTH // 2, settings.HEIGHT - 214)
+        panel = pygame.Surface(rect.size, pygame.SRCALPHA)
+        panel.fill((10, 8, 14, int(228 * fade)))
+        surface.blit(panel, rect.topleft)
+        pygame.draw.rect(surface, self.accent, rect, 1, border_radius=10)
+        text.draw(
+            surface,
+            self.toast_text,
+            (rect.centerx, rect.centery - 9),
+            21,
+            settings.INK,
+            center=True,
+            shadow=False,
+            alpha=int(255 * fade),
+        )
+
+    def _draw_hint_prompt(self, surface: pygame.Surface) -> None:
+        label = "H  Laika hint"
+        width = text.measure(label, 18)[0] + 24
+        rect = pygame.Rect(settings.WIDTH - width - 22, settings.HEIGHT - 46, width, 26)
+        pygame.draw.rect(surface, (10, 8, 14), rect, border_radius=13)
+        pygame.draw.rect(surface, settings.PANEL_EDGE, rect, 1, border_radius=13)
+        text.draw(
+            surface,
+            label,
+            (rect.centerx, rect.centery - 2),
+            18,
+            settings.ACCENT,
+            center=True,
+            shadow=False,
+        )

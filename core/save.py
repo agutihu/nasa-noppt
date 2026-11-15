@@ -12,7 +12,7 @@ from pathlib import Path
 
 from core import settings
 
-VERSION = 1
+VERSION = 2
 
 
 def _path() -> Path:

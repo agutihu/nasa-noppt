@@ -1,91 +1,244 @@
-# HOMEBOUND — Data & Content Reference
+# HOMEBOUND - Data Document
 
-HOMEBOUND is data-driven: all gameplay content lives in JSON and is loaded through
-`core/levels.py`. Scenes never hardcode numbers — they read from these files.
+## Data Format Reference
 
-## `data/planets.json`
+All gameplay numbers live in JSON files under `data/`. Scenes read through this module so a bad edit produces a readable error instead of a traceback in the middle of a frame.
 
-Top-level keys:
-
-- `order` — list of planet ids in display order.
-- `sun` — sun name + color.
-- `planets` — list of planet entries.
-
-Each planet entry:
-
-| Key | Meaning |
-|---|---|
-| `id` | Stable key, e.g. `mars`, `mercury`, `earth`, `jupiter`, … |
-| `name` | Display name. |
-| `part` | Ship part associated with this planet (or `null` for the Earth finale / pure archive). |
-| `playable` | Scene name to launch, `null` for archive-only, `"ending"` for the finale. |
-| `map_position` | `[x, y]` normalized map position. |
-| `orbit_px` | Orbit radius on the map. |
-| `radius` | Map icon radius. |
-| `color` | Planet color (hex). |
-| `band_color` | Band color (hex). |
-| `bands` | Number of procedural bands. |
-| `craters` | Number of procedural craters. |
-| `ring` / `ring_color` | Ring flag + color. |
-| `tagline` | One-line mission flavor text. |
-| `fact` | The single fact shown on the map / archive card. |
-| `facts` | Fact keys used by the level / archive. |
-| `unlock` | Unlock rules, e.g. `["tutorial_done"]`, `["all_parts"]`. |
-
-## `data/levels/<id>.json`
-
-Required keys:
-
-- `id`, `name`, `style`, `part` (`{name, color}`), `params` (object), `dialogue`.
-
-Optional keys with defaults:
-
-- `objective` (default `""`).
-- `facts` (default `[]`).
-- `unlock` (default `[]`).
-- `hint_rules` (default `{idle_seconds: 45, deaths: 3}`).
-
-`style` is one of: `platformer`, `top_down`, `timed_survival`.
-
-### Implemented levels
-
-| Level | Style | Key params |
-|---|---|---|
-| `tutorial` | `top_down` | `player_start`, `move_speed`, `accel`, `friction`, `marker`, `crate`, `hint_prompt_seconds` |
-| `mars` | `platformer` | `gravity_px`, `jump_speed`, `hold_boost`, `move_speed`, `accel`, `friction`, `chaser_speed`, `patrol_speed`, `storm_interval`, `storm_duration`, `visibility_radius`, `part_pos`, `player_start`, `checkpoints` |
-| `mercury` | `top_down` | `player_start`, `move_speed`, `accel`, `friction`, `sun_speed`, `heat_rise_rate`, `heat_fall_rate`, `meter_max`, `part_pos`, `shadows` |
-| `venus` | `timed_survival` | `player_start`, `move_speed`, `accel`, `friction`, `time_limit`, `pressure_rate`, `canister_effect`, `fragments_needed`, `part_pos`, `exit_pos`, `fragments`, `canisters`, `acid_pools` |
-
-## `data/dialogue/<id>.json`
-
-Shape:
+### Planets (data/planets.json)
 
 ```json
 {
-  "speaker": "Laika",
-  "lines": [
-    { "trigger": "start", "text": "..." },
-    { "trigger": "hint", "text": "..." }
+  "order": ["mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"],
+  "sun": {"name": "Sun", "color": "#ffb54a"},
+  "planets": [
+    {
+      "id": "mercury",
+      "name": "Mercury",
+      "part": "Solar Panel Array",
+      "part_color": "#f7c948",
+      "playable": "mercury",
+      "map_position": [0.451, 0.552],
+      "orbit_px": 67,
+      "radius": 8,
+      "color": "#9c9188",
+      "band_color": "#6f675f",
+      "bands": 1,
+      "craters": 7,
+      "ring": false,
+      "tagline": "Chase the terminator. Stay out of the sun.",
+      "fact": "Daytime surface temperatures reach about 430 °C; at night they fall to around -180 °C.",
+      "facts": ["mercury_temps", "mercury_atmosphere"],
+      "unlock": ["tutorial_done"],
+      "source": "NASA Planetary Fact Sheet"
+    },
+    ...
   ]
 }
 ```
 
-Triggers used across levels:
+**Required fields per planet**: `id`, `name`, `map_position`
+**Part field**: Maps to one of the seven required parts. `null` for Earth (finale).
+**Playable field**: `"mercury"`, `"venus"`, ..., `"ending"`. `"ending"` is the finale.
 
-- `start` — opening lines.
-- `marker` / `crate` / `hint_prompt` / `win` / `idle` — tutorial task lines.
-- `storm` — Mars dust storm warning.
-- `death_3` — Laika hint after third death.
-- `heat` — Mercury heat warning.
-- `countdown` — Venus half-time countdown.
-- `hint` — manual Laika hint (H).
+### Levels (data/levels/*.json)
 
-## `data/cache/apod.json`
+Each level JSON has these keys:
 
-Boot-screen APOD entry: `title`, `explanation`, `url`, `media_type`, `date`, `fetched_at`,
-`offline_fallback`.
+| Key | Type | Description |
+|-----|------|-----------|
+| `id` | string | Unique identifier (e.g., "outpost", "landing", "surface", "tunnel") |
+| `name` | string | Display name (e.g., "Level 1: Living on the Outpost") |
+| `style` | string | Visual theme key (e.g., "outpost", "landing", "surface", "tunnel") |
+| `params` | object | Movement parameters: `player_start`, `ground_y`, `gravity_px`, `move_speed`, `accel`, `friction`, `jump_speed`, `max_health`, `hold_boost` |
+| `dialogue` | string | Dialogue file name (e.g., "dialogue/mars.json") |
+| `objective` | string | Primary objective text |
+| `briefing` | array | Pre-game briefing text lines |
+| `phases` | array | Phase configs (see below) |
+| `systems` | array | Science system IDs (e.g., `["RADLAB+DONKI", "OSDR", "MARS TREK"]`) |
+| `part` | string | Part name for this level (maps to `data/planets.json` `part` field) |
+| `part_color` | string | Hex color for HUD display |
 
-## Adding content
+### Phase Config (within `phases` array)
 
-Because the game is data-driven, retuning a level or adding dialogue usually requires only JSON
-edits — no Python changes — provided required keys keep their shapes.
+| Key | Type | Description |
+|-----|------|-----------|
+| `id` | string | Unique phase identifier (e.g., "intro", "food_briefing", "take_photos") |
+| `objective` | string | Objective text for HUD |
+| `dialogue_trigger` | string | Laika dialogue trigger to play at phase start |
+| `time_limit` | float/int | Seconds before auto-advance, or null for player-paced |
+| `vending` | object | Vending machine config (mode, items, max_select, footer, code_mode, labels) |
+| `on_correct` | string | Dialogue trigger on correct selection |
+| `on_wrong` | string | Dialogue trigger on wrong selection |
+| `camera_buttons` | int | Number of camera photos needed (Level 3) |
+| `flashlight_on` | bool | Whether flashlight starts on (Level 4) |
+| `total_time` | int | Total time limit in seconds (Level 4) |
+
+### Dialogue (data/dialogue/*.json)
+
+```json
+{
+  "speaker": "Laika",
+  "lines": {
+    "start": [
+      {"speaker": "Laika", "text": "You are on Mars. Gravity here is 3.71 metres per second squared - about 38 percent of Earth. Hold jump longer to go higher."},
+      {"speaker": "Laika", "text": "Dust devils and alien patrols ahead. The low gravity makes leaps float - use it."}
+    ],
+    "food_briefing": [
+      {"speaker": "Laika", "text": "Before you eat, read the safety card. No open liquids: in microgravity, a spilled drink floats and can reach the panels, vents, and the outpost's most sensitive circuits. Choose sealed drinks you can drink through a straw or valve. No crumbly food: crumbs float into the ventilation grilles and circuit boards. Choose food that is sealed, moist, and eaten in one bite — like irradiated chicken in a pouch."}
+    ],
+    "food_correct": [
+      {"speaker": "Laika", "text": "Excellent choice, Astronaut. Sealed drink and irradiated chicken are safe for our mission."}
+    ],
+    "food_wrong": [
+      {"speaker": "Laika", "text": "Warning! This food is not proper for our mission. Open liquids and crumbly food damage the outpost's sensitive circuits and ventilation grilles. Let us try again."}
+    ],
+    ...
+  }
+}
+```
+
+**Line structure**: `{"speaker": "Laika", "text": "..."}`. Speaker can be overridden per line.
+
+### Mission (data/mission.json)
+
+```json
+{
+  "title": "LAIKA: MARS MISSION",
+  "subtitle": "A Junior Astronaut Mission Trainer",
+  "levels": [
+    {
+      "id": "outpost",
+      "name": "Level 1: Living on the Outpost",
+      "blurb": "Survival challenges test your decisions. Laika guides you.",
+      "briefing": [
+        "No open liquids: in microgravity, a spilled drink floats and can reach the panels, vents, and the outpost's most sensitive circuits.",
+        "No crumbly food: crumbs float into the ventilation grilles and circuit boards."
+      ],
+      "systems": ["RADLAB+DONKI", "OSDR", "MARS TREK"]
+    },
+    ...
+  ]
+}
+```
+
+**Required top-level keys**: `title`, `subtitle`, `levels`
+**Each level must have**: `id`, `name`, `blurb`, `briefing`, `systems`
+**`level_ids()`**: Returns ordered list from mission.json levels array
+**`level_meta(id)`**: Returns level dict for given id
+**`next_level(id)`**: Returns next level id or None (used for campaign progression)
+**`level_number(id)`**: Returns 1-based number
+
+## Science (data/science.json)
+
+```json
+{
+  "updated": "bundled",
+  "systems": [
+    {
+      "id": "radlab",
+      "name": "RADLAB + DONKI",
+      "role": "Radiation and real measurements",
+      "url": "https://ccmc.gsfc.nasa.gov/tools/DONKI/",
+      "status": "cache",
+      "metrics": [
+        {"label": "Mars surface dose", "value": "~0.64 mSv/day"},
+        {"label": "Solar particle event", "value": "watch the feed"}
+      ]
+    },
+    {
+      "id": "osdr",
+      "name": "OSDR",
+      "role": "Health and biology",
+      "url": "https://osdr.nasa.gov/",
+      "status": "cache",
+      "metrics": [
+        {"label": "Bone density", "value": "~1-1.5% / month"},
+        {"label": "Muscle loss", "value": "without loading"}
+      ]
+    },
+    {
+      "id": "marstrek",
+      "name": "MARS TREK",
+      "role": "Real Mars terrain",
+      "url": "https://trek.nasa.gov/mars/",
+      "status": "cache",
+      "metrics": [
+        {"label": "Survey site", "value": "Gale Crater"},
+        {"label": "Night low", "value": "-125 C"}
+      ]
+    }
+  ],
+  "facts": []
+}
+```
+
+**`updated`**: "bundled" or ISO timestamp if refreshed online
+**`systems`**: Three system objects as above
+**`facts`**: Free-form science facts
+
+## Tools (tools/)
+
+### fetch_apod.py
+- Caches today's NASA Astronomy Picture of the Day
+- Runs once, stores JSON + image in `data/cache/`
+- Game reads from cache, never needs internet
+
+### fetch_science.py
+- Refreshes `data/science.json` from live DONKI/OSDR/MARS TREK feeds
+- Runs when machine has internet access
+- Updates `updated` field and system metrics
+
+### smoke_test.py
+- Bootstraps every scene and runs 30 frames headless
+- Sets `SDL_VIDEODRIVER=dummy`, `SDL_AUDIODRIVER=dummy`
+- Tests all scenes + ending for errors
+- Run: `python tools/smoke_test.py`
+
+### shot_map.py, shot_world.py
+- Generate reference images for documentation
+- Used by TOOLS.md
+
+## Adding Content
+
+### New Planet
+1. Add entry to `data/planets.json` with all required fields
+2. Add part to `data/mission.json` levels array if playable
+3. Register planet scene in `main.py` via `register_mission_scenes()`
+4. Update `design.md`, `playguide.md`, `README.md`
+
+### New Level
+1. Create `data/levels/level<N>.json` with complete phase config
+2. Create `scenes/level<N>.py` scene following established patterns
+3. Register scene in `main.py`
+4. Add level to `data/mission.json` `levels` array
+5. Add planet part in `data/planets.json`
+6. Update documentation
+
+### New Dialogue Trigger
+1. Add lines to `data/dialogue/<planet>.json` under appropriate trigger key
+2. Reference in level phase configs' `dialogue_trigger` fields
+3. Add dialogue handling in scene's `_handle_<phase>()` methods
+
+## File Hierarchy
+
+```
+E:\nasa\
+├── assets/           (fonts, optional images)
+├── data/             (all JSON game data)
+│   ├── cache/        (APOD + science cache)
+│   ├── apod.json
+│   ├── planets.json
+│   ├── levels/       (level<N>.json)
+│   ├── mission.json
+│   ├── dialogue/     (mars.json, etc.)
+│   ├── science.json
+│   └── ...
+├── core/             (game state, settings, levels module)
+├── scenes/           (boot, menu, briefing, level1-4)
+├── ui/               (dialogue box, HUD, modal, vending)
+├── art/              (environments, sprites)
+├── tools/            (smoke_test, fetch_apod, fetch_science)
+├── main.py           (entry point, scene registration)
+├── docs/             (README.md, DOCS.md, design.md, technical.md, playguide.md, SCIENCE.md, DATA.md, TOOLS.md, HACKATHON.md, CONTRIBUTING.md)
+└── savegame.json     (player progress, auto-generated)
+```

@@ -2,6 +2,9 @@
 
 ``Player`` holds health, damage and drawing. Movement is added by a small subclass so the
 Mars platformer can reuse the same health/invulnerability rules without a rewrite.
+``TopDownPlayer`` holds eight-direction jetpack movement. ``Platformer`` holds side-on
+controller with gravity, variable jump height and coyote time.
+``CombatPlayer`` extends Platformer with a blaster.
 """
 
 from __future__ import annotations
@@ -15,6 +18,7 @@ from core import audio
 
 
 class Player:
+    """Base player class with health, damage and drawing."""
     BODY = (26, 34)
 
     def __init__(self, x: float, y: float, cfg: dict, state, hud=None) -> None:
@@ -150,7 +154,7 @@ class TopDownPlayer(Player):
             self.clamp_to(bounds)
 
 
-class PlatformerPlayer(Player):
+class Platformer(Player):
     """Side-on controller with gravity, variable jump height and coyote time.
 
     Gravity comes from the level JSON so Mars uses its real 3.71 m/s² feel.
@@ -249,7 +253,7 @@ class PlatformerPlayer(Player):
         self.on_ground = was_ground
 
 
-class CombatPlayer(PlatformerPlayer):
+class CombatPlayer(Platformer):
     """Platformer player with a blaster: laser bolts, stomp bounces, ice friction."""
 
     def __init__(self, x: float, y: float, cfg: dict, state, hud=None) -> None:

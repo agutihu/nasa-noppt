@@ -468,3 +468,436 @@ def draw_heart(surface: pygame.Surface, center: tuple[int, int], size: int, fill
         color,
         [(cx - r, cy - r // 4), (cx + r, cy - r // 4), (cx, cy + r)],
     )
+
+
+# --- Laika: portrait, holo companion and quadruped ---------------------------
+def draw_laika_portrait(
+    surface: pygame.Surface,
+    center: tuple[int, int],
+    size: int,
+    t: float = 0.0,
+    *,
+    frame: bool = True,
+    dim: bool = False,
+) -> None:
+    """The pixel-art portrait from ``assets/images/laika_happy.png``.
+
+    Falls back to the hologram drawing when the image is missing, so the game
+    never crashes on a fresh clone.
+    """
+    from core import assets  # local import keeps art import-light
+
+    image = assets.portrait(size)
+    if image is None:
+        draw_laika(surface, center, t, scale=size / 96.0, talking=True)
+        return
+
+    if frame:
+        halo = pygame.Surface((size + 18, size + 18), pygame.SRCALPHA)
+        pygame.draw.circle(halo, (*settings.ACCENT, 34), ((size + 18) // 2, (size + 18) // 2), (size + 18) // 2)
+        surface.blit(halo, (center[0] - (size + 18) // 2, center[1] - (size + 18) // 2))
+    surface.blit(image, (center[0] - size // 2, center[1] - size // 2))
+    if dim:
+        veil = pygame.Surface((size, size), pygame.SRCALPHA)
+        veil.fill((0, 0, 0, 120))
+        surface.blit(veil, (center[0] - size // 2, center[1] - size // 2))
+
+
+def draw_laika_dog(
+    surface: pygame.Surface,
+    center: tuple[int, int],
+    t: float = 0.0,
+    *,
+    scale: float = 1.0,
+    facing: int = 1,
+    hopping: bool = False,
+) -> None:
+    """Small robot dog that trots beside the astronaut in the outpost."""
+    s = scale
+    f = 1 if facing >= 0 else -1
+    cx, cy = center
+    bob = math.sin(t * 7.0) * (3.0 if hopping else 1.2) * s
+    cy += bob
+
+    body = (196, 176, 160)
+    dark = (92, 74, 68)
+    accent = settings.ACCENT
+
+    # legs
+    for index in (-1, 1):
+        for side in (-1, 1):
+            leg_x = cx + index * 9 * s + side * 3 * s
+            swing = math.sin(t * 10.0 + index * 1.6) * 3 * s if hopping else 0
+            pygame.draw.line(
+                surface, dark,
+                (leg_x, cy + 6 * s),
+                (leg_x + swing, cy + 14 * s),
+                max(1, int(2 * s)),
+            )
+
+    # tail antenna
+    pygame.draw.line(surface, dark, (cx - f * 15 * s, cy - 2 * s), (cx - f * 20 * s, cy - 12 * s), max(1, int(2 * s)))
+    pygame.draw.circle(surface, accent, (int(cx - f * 20 * s), int(cy - 13 * s)), max(1, int(2 * s)))
+
+    # body
+    pygame.draw.ellipse(
+        surface, body,
+        pygame.Rect(int(cx - 15 * s), int(cy - 5 * s), int(30 * s), int(14 * s)),
+    )
+    pygame.draw.ellipse(
+        surface, dark,
+        pygame.Rect(int(cx - 15 * s), int(cy - 5 * s), int(30 * s), int(14 * s)), max(1, int(1.4 * s)),
+    )
+    # solar backpack
+    pygame.draw.rect(surface, (48, 74, 96), pygame.Rect(int(cx - 9 * s), int(cy - 9 * s), int(18 * s), int(6 * s)), border_radius=max(1, int(2 * s)))
+    for line_x in range(int(cx - 7 * s), int(cx + 8 * s), max(2, int(4 * s))):
+        pygame.draw.line(surface, accent, (line_x, int(cy - 9 * s)), (line_x, int(cy - 4 * s)), max(1, int(1 * s)))
+
+    # head
+    head_x = cx + f * 17 * s
+    pygame.draw.circle(surface, body, (int(head_x), int(cy - 6 * s)), int(9 * s))
+    pygame.draw.circle(surface, dark, (int(head_x), int(cy - 6 * s)), int(9 * s), max(1, int(1.4 * s)))
+    # ears
+    pygame.draw.polygon(
+        surface, (120, 96, 84),
+        [(head_x - f * 4 * s, cy - 13 * s), (head_x + f * 1 * s, cy - 20 * s), (head_x + f * 4 * s, cy - 11 * s)],
+    )
+    # visor + eye
+    pygame.draw.rect(
+        surface, (28, 42, 54),
+        pygame.Rect(int(head_x - 5 * s + f * 2 * s), int(cy - 9 * s), int(8 * s), int(5 * s)),
+        border_radius=max(1, int(2 * s)),
+    )
+    pygame.draw.circle(surface, accent, (int(head_x + f * 3 * s), int(cy - 7 * s)), max(1, int(1.6 * s)))
+
+
+# --- rover ------------------------------------------------------------------
+def draw_rover_top(
+    surface: pygame.Surface,
+    center: tuple[int, int],
+    t: float = 0.0,
+    *,
+    scale: float = 1.0,
+    moving: bool = False,
+    facing: int = 1,
+    lights: bool = True,
+) -> None:
+    """Top-down rover used on the Martian surface level."""
+    s = scale
+    cx, cy = center
+    body = (206, 214, 224)
+    dark = (44, 52, 66)
+    rust = (168, 86, 50)
+
+    # wheels
+    for offset_x in (-1, 0, 1):
+        for offset_y in (-1, 1):
+            wheel = pygame.Rect(int(cx + offset_x * 14 * s - 5 * s), int(cy + offset_y * 13 * s - 4 * s), int(10 * s), int(8 * s))
+            pygame.draw.rect(surface, dark, wheel, border_radius=max(1, int(2 * s)))
+            roll = int((t * 9.0) % 4) if moving else 0
+            pygame.draw.line(
+                surface, (120, 130, 146),
+                (wheel.centerx - 3 * s + roll, wheel.centery),
+                (wheel.centerx + 3 * s, wheel.centery),
+                max(1, int(1 * s)),
+            )
+
+    # chassis
+    chassis = pygame.Rect(int(cx - 18 * s), int(cy - 15 * s), int(36 * s), int(30 * s))
+    pygame.draw.rect(surface, body, chassis, border_radius=max(2, int(6 * s)))
+    pygame.draw.rect(surface, dark, chassis, max(1, int(1.6 * s)), border_radius=max(2, int(6 * s)))
+
+    # solar deck
+    deck = pygame.Rect(int(cx - 13 * s), int(cy - 10 * s), int(26 * s), int(14 * s))
+    pygame.draw.rect(surface, (36, 62, 88), deck, border_radius=max(1, int(2 * s)))
+    for gx in range(deck.x + 2, deck.right - 1, max(3, int(5 * s))):
+        pygame.draw.line(surface, (94, 210, 200), (gx, deck.y + 2), (gx, deck.bottom - 2), 1)
+    pygame.draw.line(surface, (94, 210, 200), (deck.x + 2, deck.centery), (deck.right - 2, deck.centery), 1)
+
+    # camera mast + headlights (front is +x when facing right)
+    mast_x = cx + facing * 4 * s
+    pygame.draw.circle(surface, rust, (int(mast_x), int(cy + 2 * s)), max(2, int(3 * s)))
+    pygame.draw.circle(surface, (28, 40, 52), (int(mast_x), int(cy + 2 * s)), max(1, int(1.6 * s)))
+
+    if lights:
+        for side in (-1, 1):
+            lamp_x = cx + facing * 19 * s
+            lamp_y = cy + side * 7 * s
+            pygame.draw.circle(surface, (255, 240, 190), (int(lamp_x), int(lamp_y)), max(1, int(2 * s)))
+            cone = pygame.Surface((int(46 * s), int(20 * s)), pygame.SRCALPHA)
+            pygame.draw.polygon(cone, (255, 236, 170, 34), [(0, 8 * s), (46 * s, 0), (46 * s, 20 * s)])
+            if facing < 0:
+                cone = pygame.transform.flip(cone, True, False)
+            surface.blit(cone, (int(lamp_x - (0 if facing > 0 else 46 * s)), int(lamp_y - 10 * s)))
+
+    # antenna
+    pygame.draw.line(surface, (150, 160, 176), (cx - facing * 12 * s, cy - 12 * s), (cx - facing * 16 * s, cy - 24 * s), max(1, int(1.4 * s)))
+    blink = int(t * 3) % 2 == 0
+    pygame.draw.circle(surface, settings.ACCENT if blink else (60, 80, 90), (int(cx - facing * 16 * s), int(cy - 25 * s)), max(1, int(2 * s)))
+
+
+def draw_rover_side(
+    surface: pygame.Surface,
+    center: tuple[int, int],
+    t: float = 0.0,
+    *,
+    scale: float = 1.0,
+    facing: int = 1,
+    moving: bool = False,
+    jumping: bool = False,
+) -> None:
+    """Side-view rover for the lava-tunnel platforming level."""
+    s = scale
+    f = 1 if facing >= 0 else -1
+    cx, cy = center
+    dark = (40, 46, 60)
+    body = (206, 214, 224)
+
+    # six wheels, spinning
+    for index, offset in enumerate((-18, 0, 18)):
+        wheel_x = cx + offset * s
+        wheel_y = cy + 14 * s
+        pygame.draw.circle(surface, dark, (int(wheel_x), int(wheel_y)), max(3, int(7 * s)))
+        pygame.draw.circle(surface, (86, 96, 112), (int(wheel_x), int(wheel_y)), max(3, int(7 * s)), max(1, int(2 * s)))
+        spin = t * 10.0 + index
+        for spoke in range(3):
+            angle = spin + spoke * math.tau / 3
+            pygame.draw.line(
+                surface, (130, 142, 160),
+                (wheel_x, wheel_y),
+                (wheel_x + math.cos(angle) * 5 * s, wheel_y + math.sin(angle) * 5 * s),
+                max(1, int(1 * s)),
+            )
+
+    # suspension
+    for offset in (-18, 0, 18):
+        pygame.draw.line(surface, (110, 120, 136), (cx + offset * s, cy + 7 * s), (cx + offset * s, cy + 12 * s), max(1, int(2 * s)))
+
+    # body with a dog-ish snout on the leading edge
+    body_rect = pygame.Rect(int(cx - 24 * s), int(cy - 10 * s), int(48 * s), int(20 * s))
+    pygame.draw.rect(surface, body, body_rect, border_radius=max(2, int(6 * s)))
+    pygame.draw.rect(surface, dark, body_rect, max(1, int(1.6 * s)), border_radius=max(2, int(6 * s)))
+    snout = pygame.Rect(int(cx + f * 24 * s - (7 * s if f > 0 else 0)), int(cy - 4 * s), int(12 * s), int(11 * s))
+    pygame.draw.rect(surface, body, snout, border_radius=max(1, int(3 * s)))
+    pygame.draw.rect(surface, dark, snout, max(1, int(1.2 * s)), border_radius=max(1, int(3 * s)))
+
+    # solar deck
+    deck = pygame.Rect(int(cx - 16 * s), int(cy - 16 * s), int(32 * s), int(7 * s))
+    pygame.draw.rect(surface, (36, 62, 88), deck, border_radius=max(1, int(2 * s)))
+    for gx in range(deck.x + 2, deck.right - 1, max(3, int(5 * s))):
+        pygame.draw.line(surface, (94, 210, 200), (gx, deck.y + 1), (gx, deck.bottom - 1), 1)
+
+    # camera mast
+    pygame.draw.line(surface, (150, 160, 176), (cx - f * 6 * s, cy - 16 * s), (cx - f * 10 * s, cy - 30 * s), max(1, int(1.4 * s)))
+    pygame.draw.circle(surface, (28, 40, 52), (int(cx - f * 10 * s), int(cy - 31 * s)), max(2, int(3 * s)))
+    pygame.draw.circle(surface, settings.ACCENT, (int(cx - f * 10 * s), int(cy - 31 * s)), max(1, int(1.5 * s)))
+
+    # headlight + eye
+    lamp_x = cx + f * 30 * s
+    pygame.draw.circle(surface, (255, 240, 180), (int(lamp_x), int(cy + 1 * s)), max(1, int(2 * s)))
+    pygame.draw.circle(surface, (36, 48, 62), (int(cx + f * 28 * s), int(cy - 12 * s)), max(1, int(2 * s)))
+    pygame.draw.circle(surface, settings.ACCENT, (int(cx + f * 29 * s), int(cy - 12 * s)), max(1, int(1.2 * s)))
+
+    if jumping:
+        for side in (-1, 1):
+            pygame.draw.line(
+                surface, (255, 200, 120),
+                (cx + side * 14 * s, cy + 18 * s),
+                (cx + side * 14 * s, cy + 24 * s),
+                max(1, int(2 * s)),
+            )
+
+
+# --- outpost props ----------------------------------------------------------
+def draw_vending(surface: pygame.Surface, rect: pygame.Rect, t: float = 0.0, *, active: bool = False) -> None:
+    pygame.draw.rect(surface, (46, 52, 66), rect, border_radius=10)
+    pygame.draw.rect(surface, (26, 30, 40), rect.inflate(6, 6), 2, border_radius=12)
+    pygame.draw.rect(surface, (62, 70, 88), (rect.x + 8, rect.y + 8, rect.width - 16, rect.height - 16), border_radius=8)
+
+    glass = pygame.Rect(rect.x + 14, rect.y + 16, rect.width - 28, int(rect.height * 0.55))
+    pygame.draw.rect(surface, (18, 34, 46), glass, border_radius=6)
+    pygame.draw.rect(surface, (94, 210, 200), glass, 1, border_radius=6)
+    for row in range(3):
+        for col in range(3):
+            item_x = glass.x + 16 + col * (glass.width - 32) // 3
+            item_y = glass.y + 12 + row * (glass.height - 24) // 3
+            shade = 130 + (row * 3 + col) * 8
+            pygame.draw.rect(
+                surface, (shade, shade - 30, 90),
+                pygame.Rect(item_x, item_y, 12, 16), border_radius=2,
+            )
+    # reflection
+    pygame.draw.line(surface, (150, 230, 240), (glass.x + 6, glass.bottom - 4), (glass.x + 20, glass.y + 4), 2)
+
+    keypad = pygame.Rect(rect.x + 16, glass.bottom + 10, rect.width // 2 - 20, rect.height - glass.height - 40)
+    pygame.draw.rect(surface, (28, 32, 42), keypad, border_radius=5)
+    for index in range(9):
+        key = pygame.Rect(keypad.x + 5 + (index % 3) * 14, keypad.y + 5 + (index // 3) * 12, 11, 9)
+        pygame.draw.rect(surface, (70, 78, 94), key, border_radius=2)
+
+    slot = pygame.Rect(rect.right - rect.width // 2 + 4, rect.bottom - 34, rect.width // 2 - 20, 16)
+    pygame.draw.rect(surface, (14, 16, 22), slot, border_radius=3)
+    pygame.draw.rect(surface, (90, 100, 120), slot, 1, border_radius=3)
+
+    if active:
+        glow = pygame.Surface(rect.size, pygame.SRCALPHA)
+        pygame.draw.rect(glow, (*settings.ACCENT, 34), (0, 0, rect.width, rect.height), border_radius=10)
+        surface.blit(glow, rect.topleft)
+        pygame.draw.rect(surface, settings.ACCENT, rect, 2, border_radius=10)
+
+
+def draw_vent(surface: pygame.Surface, center: tuple[int, int], t: float = 0.0, *, active: bool = True, size: int = 46) -> None:
+    rect = pygame.Rect(0, 0, size, size // 2)
+    rect.center = center
+    pygame.draw.rect(surface, (34, 38, 48), rect, border_radius=4)
+    pygame.draw.rect(surface, (70, 76, 90), rect, 1, border_radius=4)
+    for index in range(4):
+        y = rect.y + 4 + index * (rect.height - 8) // 4
+        pygame.draw.line(surface, (96, 104, 120), (rect.x + 5, y), (rect.right - 5, y), 2)
+    if active:
+        for index in range(3):
+            phase = (t * 0.9 + index / 3.0) % 1.0
+            alpha = int(120 * (1.0 - phase))
+            puff = pygame.Surface((10, 10), pygame.SRCALPHA)
+            pygame.draw.circle(puff, (150, 230, 220, alpha), (5, 5), int(2 + phase * 4))
+            surface.blit(puff, (rect.centerx - 5 + int(math.sin(t + index) * 4), rect.bottom + int(phase * 26)))
+
+
+def draw_bed(surface: pygame.Surface, rect: pygame.Rect, t: float = 0.0, *, occupied: bool = False) -> None:
+    pygame.draw.rect(surface, (40, 44, 58), rect, border_radius=8)
+    pygame.draw.rect(surface, (78, 84, 102), rect, 1, border_radius=8)
+    # sleeping bag strapped to the wall
+    bag = rect.inflate(-14, -20)
+    pygame.draw.rect(surface, (60, 96, 120), bag, border_radius=14)
+    pygame.draw.rect(surface, (94, 216, 208), bag, 1, border_radius=14)
+    pygame.draw.line(surface, (94, 216, 208), (bag.x + 8, bag.centery), (bag.right - 8, bag.centery), 1)
+    if occupied:
+        pygame.draw.ellipse(surface, (230, 214, 198), (bag.x + 6, bag.y + 6, bag.width - 12, 18))
+        for index in range(3):
+            zx = bag.centerx + 10 + index * 8
+            zy = bag.y - 8 - index * 8 - int((math.sin(t * 2 + index) + 1) * 3)
+            text = pygame.font.SysFont("consolas,monospace", 14 + index * 2)
+            surface.blit(text.render("z", True, (180, 230, 224)), (zx, zy))
+
+
+def draw_crumb(surface: pygame.Surface, center: tuple[int, int], t: float = 0.0) -> None:
+    pulse = 0.7 + 0.3 * abs(math.sin(t * 3.0 + center[0] * 0.05))
+    radius = max(2, int(4 * pulse))
+    pygame.draw.circle(surface, (206, 150, 92), center, radius)
+    pygame.draw.circle(surface, (150, 100, 56), center, radius, 1)
+
+
+def draw_camera_station(surface: pygame.Surface, center: tuple[int, int], t: float = 0.0, *, taken: bool = False) -> None:
+    cx, cy = center
+    color = settings.GREEN if taken else settings.ACCENT
+    radius = 26 + int(4 * math.sin(t * 3.0))
+    pygame.draw.circle(surface, (*color, 60), center, radius, 1)
+    pygame.draw.rect(surface, (26, 34, 44), (cx - 16, cy - 12, 32, 22), border_radius=5)
+    pygame.draw.rect(surface, color, (cx - 16, cy - 12, 32, 22), 2, border_radius=5)
+    pygame.draw.circle(surface, color, (cx, cy - 1), 7, 2)
+    pygame.draw.circle(surface, (10, 16, 20), (cx, cy - 1), 4)
+    pygame.draw.rect(surface, color, (cx - 5, cy - 17, 10, 5), border_radius=2)
+    if taken:
+        pygame.draw.line(surface, settings.GREEN, (cx - 12, cy + 16), (cx - 3, cy + 23), 3)
+        pygame.draw.line(surface, settings.GREEN, (cx - 3, cy + 23), (cx + 14, cy + 6), 3)
+
+
+def draw_sample_site(surface: pygame.Surface, center: tuple[int, int], t: float = 0.0, *, taken: bool = False) -> None:
+    cx, cy = center
+    color = (150, 130, 120) if taken else settings.GOLD
+    pygame.draw.ellipse(surface, (86, 52, 36), (cx - 22, cy + 6, 44, 16))
+    pygame.draw.circle(surface, (108, 82, 70), (cx, cy), 15)
+    pygame.draw.circle(surface, (150, 120, 100), (cx - 5, cy - 4), 6)
+    if taken:
+        pygame.draw.line(surface, (70, 60, 58), (cx - 8, cy - 4), (cx + 8, cy + 6), 2)
+    else:
+        pulse = 0.5 + 0.5 * abs(math.sin(t * 2.4))
+        pygame.draw.circle(surface, color, (cx, cy - 18), int(3 + 3 * pulse), 1)
+        pygame.draw.circle(surface, color, (cx, cy - 18), 2)
+
+
+def draw_terminal(
+    surface: pygame.Surface,
+    center: tuple[int, int],
+    t: float = 0.0,
+    *,
+    kind: str = "sample",
+    done: bool = False,
+) -> None:
+    cx, cy = center
+    color = settings.GREEN if done else (settings.GOLD if kind == "sample" else settings.ACCENT)
+    base = pygame.Rect(cx - 18, cy + 6, 36, 12)
+    pygame.draw.rect(surface, (40, 36, 40), base, border_radius=4)
+    pygame.draw.rect(surface, (90, 80, 80), base, 1, border_radius=4)
+    pygame.draw.rect(surface, (26, 26, 32), (cx - 13, cy - 20, 26, 28), border_radius=4)
+    pygame.draw.rect(surface, color, (cx - 13, cy - 20, 26, 28), 2, border_radius=4)
+
+    if kind == "sample":
+        pygame.draw.circle(surface, color, (cx, cy - 6), 5, 2)
+        pygame.draw.line(surface, color, (cx, cy - 11), (cx, cy - 1), 1)
+    else:
+        pygame.draw.rect(surface, color, (cx - 7, cy - 12, 14, 10), 2, border_radius=2)
+        pygame.draw.circle(surface, color, (cx, cy - 7), 3, 1)
+        pygame.draw.rect(surface, color, (cx - 3, cy - 15, 6, 3), 2)
+
+    if done:
+        pygame.draw.line(surface, settings.GREEN, (cx - 8, cy + 1), (cx - 2, cy + 7), 2)
+        pygame.draw.line(surface, settings.GREEN, (cx - 2, cy + 7), (cx + 9, cy - 6), 2)
+    else:
+        glow = pygame.Surface((54, 54), pygame.SRCALPHA)
+        alpha = int(50 + 30 * abs(math.sin(t * 3)))
+        pygame.draw.circle(glow, (*color, alpha), (27, 27), 20, 1)
+        surface.blit(glow, (cx - 27, cy - 27))
+
+
+def draw_rock_platform(
+    surface: pygame.Surface,
+    rect: pygame.Rect,
+    t: float = 0.0,
+    *,
+    crumbling: float = 0.0,
+    solid: bool = True,
+) -> None:
+    color = (96, 74, 66) if solid else (120, 100, 82)
+    if crumbling > 0.0:
+        color = (
+            min(255, 96 + int(90 * (1.0 - crumbling))),
+            74,
+            66,
+        )
+    pygame.draw.rect(surface, color, rect, border_radius=6)
+    pygame.draw.rect(surface, (54, 40, 38), rect, 2, border_radius=6)
+    pygame.draw.line(
+        surface, (150, 120, 104),
+        (rect.x + 6, rect.y + 4), (rect.right - 6, rect.y + 4), 2,
+    )
+    for index in range(3):
+        crack_x = rect.x + 12 + index * rect.width // 4
+        pygame.draw.line(
+            surface, (54, 40, 38),
+            (crack_x, rect.y + 8),
+            (crack_x + 8, rect.centery),
+            1,
+        )
+    # lava underglow
+    glow = pygame.Surface((rect.width, 18), pygame.SRCALPHA)
+    pygame.draw.ellipse(glow, (255, 120, 40, 30 + int(10 * math.sin(t * 3))), (0, 0, rect.width, 18))
+    surface.blit(glow, (rect.x, rect.bottom - 6))
+
+
+def draw_earth(surface: pygame.Surface, center: tuple[int, int], radius: int, t: float = 0.0) -> None:
+    cx, cy = center
+    pygame.draw.circle(surface, (36, 92, 156), (cx, cy), radius)
+    pygame.draw.circle(surface, (64, 138, 196), (cx - radius // 4, cy - radius // 4), radius // 2)
+    pygame.draw.ellipse(surface, (86, 168, 116), (cx - radius // 2, cy - radius // 3, radius, radius // 2))
+    pygame.draw.ellipse(surface, (74, 150, 104), (cx, cy + radius // 5, radius // 2, radius // 3))
+    pygame.draw.circle(surface, (180, 220, 255), (cx, cy), radius, 2)
+    cloud = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+    for index in range(3):
+        offset = int(math.sin(t * 0.6 + index) * radius * 0.4)
+        pygame.draw.ellipse(
+            cloud, (255, 255, 255, 60),
+            (radius // 2 + offset, radius // 2 + index * radius // 3, radius, radius // 5),
+        )
+    surface.blit(cloud, (cx - radius, cy - radius))
+

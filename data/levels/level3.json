@@ -1,0 +1,71 @@
+{
+  "id": "surface",
+  "name": "Level 3: Martian Surface",
+  "style": "surface",
+  "params": {
+    "player_start": [640, 400],
+    "ground_y": 560,
+    "gravity_px": 560,
+    "move_speed": 250,
+    "accel": 1400,
+    "friction": 900,
+    "jump_speed": 0,
+    "max_health": 3,
+    "hold_boost": 0.5
+  },
+  "dialogue": "dialogue/mars.json",
+  "objective": "Take photographs and collect samples while surviving the sandstorm and extreme cold.",
+  "briefing": [
+    "When a sandstorm begins, find shelter behind rocks, stop all scientific activities, and activate Low Power Mode. The dust is so dense that sunlight cannot reach the solar panels.",
+    "After the storm, the temperature will drop to -125 °C. Activate Hibernation Mode to protect the rover's batteries. If the rover is not close enough to a lava tunnel, it will be destroyed."
+  ],
+  "phases": [
+    {
+      "id": "intro",
+      "objective": "Follow Laika to the research area.",
+      "dialogue_trigger": "intro",
+      "time_limit": null
+    },
+    {
+      "id": "photo_intro",
+      "objective": "Laika explains the photography mission. Use the camera to take pictures of marked locations.",
+      "dialogue_trigger": "photo_intro",
+      "time_limit": null
+    },
+    {
+      "id": "take_photos",
+      "objective": "Take photographs of all marked camera buttons. A shutter sound will play for each photo taken.",
+      "dialogue_trigger": "take_photos",
+      "camera_buttons": 6,
+      "time_limit": 300
+    },
+    {
+      "id": "sandstorm",
+      "objective": "Sandstorm rolling in! Find shelter behind the rocks, stop all activities, and activate Low Power Mode.",
+      "dialogue_trigger": "sandstorm",
+      "time_limit": 45
+    },
+    {
+      "id": "cold_alert",
+      "objective": "The temperature is dropping to -125 °C. Activate Hibernation Mode to protect the rover.",
+      "dialogue_trigger": "cold_alert",
+      "time_limit": 10
+    },
+    {
+      "id": "hibernation",
+      "objective": "Hibernation Mode activated. The rover is protected from the cold. Wait for the temperature to stabilize.",
+      "dialogue_trigger": "hibernation",
+      "time_limit": 45
+    },
+    {
+      "id": "complete",
+      "objective": "Level 3 complete. Return to the briefing screen.",
+      "dialogue_trigger": "complete",
+      "time_limit": null
+    }
+  ],
+  "systems": ["RADLAB+DONKI", "OSDR", "MARS TREK"],
+  "part": "Thermal Regulator",
+  "part_color": "#b8f2e6",
+  "facts": ["uranus_tilt"]
+}

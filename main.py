@@ -20,6 +20,9 @@ from scenes.map import MapScene
 from scenes.tutorial import TutorialScene
 from scenes.world_level import make_world_scene
 from scenes.ending import EndingScene
+from scenes.briefing import BriefingScene
+from scenes.level1 import Level1Scene
+from scenes.level2 import Level2Scene
 from ui.pause import PauseScene
 
 # every mission planet runs the shared world engine; each is its own scene name
@@ -62,6 +65,10 @@ async def main() -> int:
         game.manager.register(planet_id, make_world_scene(planet_id))
     game.manager.register(settings.ENDING, EndingScene)
     game.manager.register(settings.PAUSE, PauseScene)
+    register_mission_scenes(game.manager)
+    game.manager.register(settings.LEVEL2, Level2Scene)
+    game.manager.register(settings.LEVEL3, Level3Scene)
+    game.manager.register(settings.LEVEL4, Level4Scene)
 
     game.manager.switch(settings.BOOT)
 
@@ -70,6 +77,9 @@ async def main() -> int:
         for event in events:
             if event.type == pygame.QUIT:
                 game.running = False
+            # scale mouse to virtual resolution
+            if event.type in (pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
+                event.pos = game.scale_mouse(event.pos)
 
         game.manager.handle_events(events)
 

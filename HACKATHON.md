@@ -1,69 +1,92 @@
-# HOMEBOUND — Hackathon Submission Notes
+# HOMEBOUND - Hackathon Document
 
-**NASA Space Apps Challenge 2026**
+## NASA Space Apps Challenge 2026
 
-## Title
+### Project: LAIKA: MARS MISSION
 
-**HOMEBOUND — A Solar System Repair Mission**
+**Team**: [Team to be filled]  
+**Challenge Category**: Game/Interactive Application  
+**Platform**: Windows, macOS, Linux, Web (pygbag)  
+**Python Version**: 3.12+  
+**Dependencies**: pygame-ce  
 
-## Tagline
+### Project Summary
 
-*Nine levels. Seven worlds. One ride home.*
+LAIKA: MARS MISSION is a junior astronaut mission trainer where the player guides Laika, a robotic dog, through four survival challenges on the way to Mars. Every mechanic is grounded in real NASA data, and the game teaches players about solar radiation, communication delays, sandstorm survival, and extreme cold operations.
 
-## Concept
+### Key Features (per NASA Space Apps Briefing)
 
-A stranded pilot must cross the solar system, recover seven ship parts from seven worlds, and fly
-home.
+1. **Four-level mission arc**:
+   - Level 1: Outpost survival (food, exercise, rest)
+   - Level 2: Landing preparation (equipment selection + comms delay)
+   - Level 3: Martian surface (photos + sandstorm + cold)
+   - Level 4: Lava tunnel exploration (platforming + flashlight + escape)
 
-Every level is built on one real planetary fact, and that fact is the mechanic — Mercury's sweeping
-sun line drives the heat, Venus's acid rain pours from a 92-bar sky, Mars's low gravity makes every
-jump floaty, Jupiter has no ground at all, Saturn rains ring debris, Uranus tilts the horizon, and
-Neptune's supersonic winds push you sideways.
+2. **Science integration**:
+   - RADLAB + DONKI: Radiation measurements
+   - OSDR: Human/biological effects of spaceflight
+   - MARS TREK: Real Mars terrain data
 
-## The Hook
+3. **Procedural everything**: No image/audio files required. Game runs with empty `assets/`.
 
-Instead of a quiz, the player *experiences* planetary science. Every gameplay rule maps to a real
-NASA measurement, each world has its own weather, hazards, and enemies, and the full playable arc
-runs about 25–30 minutes with checkpoints so it stays demo-able.
+4. **Graceful fallbacks**: Missing data never crashes the game.
 
-## Quick Start
+5. **Three difficulty levels**: Easy (longer timers, more retries), Normal (as designed), Hard (shorter timers, stricter comms).
 
-```bash
-git clone https://github.com/imamsanghaarc/nasa.git
-cd nasa
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-python main.py
-```
+6. **Three endings**: Win (Laika returns home), Incomplete (Laika returns but mission unfinished), Lost (Laika doesn't return).
 
-Fully offline — no internet or asset files required.
+### Development Roadmap
 
-## Three-Minute Demo Script
+- **Week 1**: Core framework, settings, save system, game state, science layer
+- **Week 2**: Art pipeline (procedural environments, sprites), movement controllers
+- **Week 3**: Level 1 (Outpost) — food, exercise, rest challenges
+- **Week 4**: Level 2 (Landing) — equipment vending + communication delay
+- **Week 5**: Level 3 (Surface) — photography + sandstorm + cold
+- **Week 6**: Level 4 (Lava Tunnel) — platforming + flashlight + escape
+- **Week 7**: Ending screen, documentation, polish
+- **Week 8**: Headless smoke test, final build, judge presentation
 
-1. **0:00** — Boot: APOD splash, title, "data: NASA APOD".
-2. **0:15** — Menu → map: "Seven parts, seven worlds, one ride home."
-3. **0:30** — Tutorial: Laika introduces the mission; collect the first task.
-4. **0:50** — Mercury: the sun line sweeps, heat waves rise, recover the Solar Panel Array.
-5. **1:15** — Venus: acid rain and geysers under a 92-bar sky, recover the Hull Plating.
-6. **1:40** — Mars: 38% gravity jumps, a dust storm swallows the screen, recover the Navigation Module.
-7. **2:05** — Jupiter → Neptune montage: storm platforms, ring debris, tilted haze, supersonic winds.
-8. **2:35** — Earth: drag all seven parts onto the ship, facts recap, stats screen with per-level best times.
-9. **3:00** — Close: "Every mechanic is a real planetary fact — sunlight, pressure, gravity, wind. Cached so it runs offline."
+### judging Criteria (NASA Space Apps)
 
-## Judging Alignment
+1. **Innovation**: Procedural mission generator with science integration
+2. **Technical**: Robust headless playtest, no crashes, graceful fallbacks
+3. **Science accuracy**: Real NASA data integrated into gameplay mechanics
+4. **User experience**: Intuitive controls, clear objectives, progressive difficulty
+5. **Accessibility**: Difficulty levels, text size adjustment, hint system
+6. **Completeness**: Full 4-level arc with win/incomplete/lose outcomes
 
-- **Educational:** facts are real NASA data, verified against fact sheets.
-- **Gameplay:** real mechanics (gravity, heat, pressure, wind) drive the challenge.
-- **Demo-ability:** complete arc in one sitting; ~25–30 min play time with checkpoints.
+### Controls (Quick Reference)
 
-## NASA Data
+| Action | Key(s) |
+|--------|--------|
+| Advance dialogue / Interact | `E`, `Space` |
+| Toggle flashlight (Level 4) | `F` |
+| Laika hint | `H` |
+| Pause menu | `Esc` |
+| Move | Arrow keys, WASD |
 
-- APOD boot screen via `tools/fetch_apod.py`, cached offline.
-- Planetary facts from NASA fact sheets.
+### Target Specifications
 
-## Team
+- **Play time**: 25-30 minutes full arc
+- **Difficulties**: Easy, Normal, Hard
+- **Scenes**: 14 (boot, menu, map, tutorial, 4 levels × 4: boot/menu/briefing/level, ending) + smoke test
+- **Platforms**: Windows (primary), macOS, Linux, Web (pygbag)
+- **Assets**: None required (procedural generation)
+- **Save file**: `savegame.json` next to executable
 
-- **Sanghaar** — gameplay & content
-- **Sulaiman** — engine & shell
-- **Story and level design:** Victoria and team
+### Submission Checklist
+
+- [ ] Full 4-level mission playable from start to end
+- [ ] All three endings (win/incomplete/lost) trigger correctly
+- [ ] Headless smoke test passes (`python tools/smoke_test.py`)
+- [ ] Difficulty toggling works across all levels
+- [ ] Save/load roundtrip preserves progress
+- [ ] Documentation complete (README, playguide, technical, science, data)
+- [ ] No plain `pygame` dependency (must use `pygame-ce`)
+- [ ] Game runs with empty `assets/` folder
+- [ ] All dialogue triggers functional
+- [ ] Vending machine modes (cart/code/load) working
+- [ ] Communication delay mechanic functional (Level 2)
+- [ ] Sandstorm and Hibernation Mode functional (Level 3)
+- [ ] Flashlight and platforming functional (Level 4)
+- [ ] All Laika dialogue lines playing correctly

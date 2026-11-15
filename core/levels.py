@@ -1,8 +1,8 @@
-"""JSON level and planet data.
+"""JSON mission data.
 
-All gameplay numbers live in ``data/levels/*.json`` and ``data/planets.json``. Scenes read
-through this module so a bad edit produces a readable error instead of a traceback in the
-middle of a frame.
+All gameplay numbers live in ``data/levels/*.json``; the campaign order and the
+judge-facing blurb live in ``data/mission.json``. Scenes read through this module so a
+bad edit produces a readable error instead of a traceback in the middle of a frame.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ from pathlib import Path
 
 from core import settings
 
-LEVEL_KEYS = ("id", "name", "style", "params", "dialogue")
+LEVEL_KEYS = ("id", "name", "dialogue", "params", "objective")
 
 
 class DataError(ValueError):
@@ -35,6 +35,51 @@ def _read_json(path: Path) -> dict:
     return data
 
 
+# --- campaign ---------------------------------------------------------------
+def load_mission() -> dict:
+    config = _read_json(settings.DATA / "mission.json")
+    levels = config.get("levels")
+    if not isinstance(levels, list) or not levels:
+        raise DataError("mission.json: 'levels' must be a non-empty list")
+    for entry in levels:
+        for key in ("id", "name", "scene", "blurb", "briefing", "systems"):
+            if key not in entry:
+                raise DataError(f"mission.json: level {entry!r} is missing '{key}'")
+    config.setdefault("title", settings.TITLE)
+    config.setdefault("subtitle", settings.SUBTITLE)
+    return config
+
+
+def level_list() -> list[dict]:
+    return list(load_mission()["levels"])
+
+
+def level_ids() -> list[str]:
+    return [entry["id"] for entry in level_list()]
+
+
+def level_meta(level_id: str) -> dict:
+    for entry in level_list():
+        if entry["id"] == level_id:
+            return entry
+    raise DataError(f"mission.json: unknown level id '{level_id}'")
+
+
+def next_level(level_id: str) -> str | None:
+    ids = level_ids()
+    if level_id in ids:
+        index = ids.index(level_id)
+        if index + 1 < len(ids):
+            return ids[index + 1]
+    return None
+
+
+def level_number(level_id: str) -> int:
+    ids = level_ids()
+    return ids.index(level_id) + 1 if level_id in ids else 0
+
+
+# --- level configs ----------------------------------------------------------
 def load_level(level_id: str) -> dict:
     path = settings.DATA / "levels" / f"{level_id}.json"
     config = _read_json(path)
@@ -42,17 +87,71 @@ def load_level(level_id: str) -> dict:
     if missing:
         raise DataError(f"{path.name} is missing: {', '.join(missing)}")
 
-    config.setdefault("part", None)
+    config.setdefault("briefing", [])
     config.setdefault("facts", [])
-    config.setdefault("unlock", [])
-    config.setdefault("hint_rules", {"idle_seconds": 45, "deaths": 3})
-    config.setdefault("objective", "")
+    config.setdefault("source", "")
+    config.setdefault("time_limit", None)
+    config.setdefault("scene", "world")  # default scene name
     if not isinstance(config["params"], dict):
         raise DataError(f"{path.name}: 'params' must be an object")
+    if not isinstance(config["briefing"], list):
+        raise DataError(f"{path.name}: 'briefing' must be a list")
     return config
 
 
+def params_for(config: dict, difficulty: str) -> dict:
+    """Merge the level params with the per-difficulty override block."""
+    params = dict(config.get("params") or {})
+    overrides = params.pop("difficulty", {}) or {}
+    if difficulty not in settings.DIFFICULTIES:
+        difficulty = "normal"
+    params.update(overrides.get(difficulty, {}) or {})
+    return params
+
+
+# --- dialogue ---------------------------------------------------------------
+def load_dialogue(relative: str) -> dict:
+    """Load a dialogue file and index its lines by trigger.
+
+    File shape::
+
+        {"speaker": "Laika", "lines": [{"trigger": "start", "text": "..."}]}
+
+    A line may override the speaker. Returns::
+
+        {"speaker": "Laika", "lines": {"start": [{"speaker": ..., "text": ...}]}}
+    """
+    name = str(relative).replace("\\", "/")
+    if name.startswith("dialogue/"):
+        name = name[len("dialogue/"):]
+    path = settings.DATA / "dialogue" / name
+    config = _read_json(path)
+
+    default_speaker = str(config.get("speaker", "Laika"))
+    by_trigger: dict[str, list[dict]] = {}
+    for entry in config.get("lines", []):
+        if not isinstance(entry, dict):
+            continue
+        body = str(entry.get("text", "")).strip()
+        if not body:
+            continue
+        trigger = str(entry.get("trigger", "start"))
+        by_trigger.setdefault(trigger, []).append(
+            {"speaker": str(entry.get("speaker", default_speaker)), "text": body}
+        )
+
+    return {
+        "speaker": default_speaker,
+        "lines": by_trigger,
+        "triggers": list(by_trigger.keys()),
+    }
+
+
 def load_planets() -> dict:
+    """Load the planet definitions from ``data/planets.json``.
+
+    Returns a dict good for iteration: ``{"planets": [...], "order": [...]}``.
+    """
     config = _read_json(settings.DATA / "planets.json")
     planets = config.get("planets")
     if not isinstance(planets, list) or not planets:
@@ -65,83 +164,5 @@ def load_planets() -> dict:
     return config
 
 
-def planet_index() -> dict[str, dict]:
-    return {planet["id"]: planet for planet in load_planets()["planets"]}
-
-
-def load_dialogue(relative: str) -> dict:
-    """Load a dialogue file and index its lines by trigger.
-
-    File shape::
-
-        {"speaker": "Laika", "lines": [{"trigger": "start", "text": "..."}]}
-    """
-    name = relative.replace("\\", "/")
-    if name.startswith("dialogue/"):
-        name = name[len("dialogue/") :]
-    path = settings.DATA / "dialogue" / name
-    config = _read_json(path)
-
-    by_trigger: dict[str, list[str]] = {}
-    for entry in config.get("lines", []):
-        if not isinstance(entry, dict):
-            continue
-        text = str(entry.get("text", "")).strip()
-        if not text:
-            continue
-        trigger = str(entry.get("trigger", "start"))
-        by_trigger.setdefault(trigger, []).append(text)
-
-    return {
-        "speaker": config.get("speaker", "Laika"),
-        "lines": by_trigger,
-        "triggers": list(by_trigger.keys()),
-    }
-
-
-def level_ids() -> list[str]:
-    folder = settings.DATA / "levels"
-    if not folder.is_dir():
-        return []
-    return sorted(path.stem for path in folder.glob("*.json"))
-
-
-def playable_levels() -> list[dict]:
-    """Planets with a real mission in this build (excludes archive cards and the finale)."""
-    return [
-        planet
-        for planet in load_planets()["planets"]
-        if planet.get("playable")
-        and planet["playable"] not in (None, "ending")
-        and planet.get("part")
-    ]
-
-
-def mission_chain() -> list[str]:
-    """Mission planets in the order they must be completed (finale excluded)."""
-    return [
-        planet["id"]
-        for planet in load_planets()["planets"]
-        if planet.get("playable") and planet["playable"] != "ending"
-    ]
-
-
-def previous_mission(planet_id: str) -> str | None:
-    """The mission that must be won before this one, or None for the first."""
-    chain = mission_chain()
-    if planet_id in chain:
-        index = chain.index(planet_id)
-        if index > 0:
-            return chain[index - 1]
-    return None
-
-
-def required_parts() -> list[str]:
-    return [planet["part"] for planet in playable_levels()]
-
-
-def finale_level() -> str:
-    for planet in load_planets()["planets"]:
-        if planet.get("playable") == "ending":
-            return "ending"
-    return "ending"
+def level_names() -> dict[str, str]:
+    return {entry["id"]: entry["name"] for entry in level_list()}

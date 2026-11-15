@@ -68,6 +68,33 @@ def image(relative: str, scale: int | None = None) -> pygame.Surface | None:
     return surface
 
 
+def portrait(size: int) -> pygame.Surface | None:
+    """Laika's pixel-art portrait, scaled with nearest-neighbour to stay crisp.
+
+    Returns ``None`` when the file is missing; every caller falls back to the
+    procedural ``sprites.draw_laika`` hologram.
+    """
+    key = ("portrait", size)
+    if key in _image_cache:
+        return _image_cache[key]
+
+    source = settings.ASSETS / "images" / settings.PORTRAIT
+    surface: pygame.Surface | None = None
+    if source.exists():
+        try:
+            loaded = pygame.image.load(str(source))
+            if loaded.get_flags() & pygame.SRCALPHA:
+                loaded = loaded.convert_alpha()
+            else:
+                loaded = loaded.convert()
+            surface = pygame.transform.scale(loaded, (size, size))
+        except (pygame.error, OSError, ValueError):
+            surface = None
+
+    _image_cache[key] = surface
+    return surface
+
+
 def clear_cache() -> None:
     _font_cache.clear()
     _image_cache.clear()

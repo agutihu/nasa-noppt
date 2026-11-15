@@ -1,119 +1,67 @@
-# HOMEBOUND — Game Design Document
-
-HOMEBOUND is a solar system repair mission built for the NASA Space Apps Hackathon 2026.
+# HOMEBOUND - Design Document
 
 ## Premise
-
-A pilot is stranded in orbit with a damaged ship. Laika, the ship's navigation core, is the
-only companion standing between the pilot and home. The pilot must cross the solar system,
-recover the parts needed to repair the ship, and fly home.
-
-Every level in the game is built on one real planetary fact, and that fact is the mechanic.
-Instead of teaching through text or quizzes, the player *experiences* planetary science.
-
-## Story
-
-The pilot wakes in a damaged orbit. Laika delivers the opening briefing: seven critical parts
-are scattered across seven worlds. Bring them all back and the ship can be rebuilt.
-
-The emotional beat of the game is small and personal. The mechanics are cosmic. The two are
-woven together through Laika's dialogue, which carries the human weight while the levels carry
-the science.
+Today you are going to help with a really important mission, gathering information about Mars. Your base will be the martian output where you and Laika, a robotic dog, will gather information about invisible solar radiation, solar storms, environmental hazards, and possible signs of life, and take important decisions to secure your safety and from the mission.
 
 ## Design Pillars
+1. **Decision-based gameplay**: Every level presents choices with consequences. Wrong food choice restarts the game; wrong comms action wastes time; wrong resting spot causes CO₂ risk.
+2. **Science integration**: Every mechanic is grounded in real NASA data. The three systems from the briefing (RADLAB+DONKI, OSDR, MARS TREK) provide the science layer.
+3. **Procedural everything**: Art, audio, and worlds are all generated in code. No image files required. Game runs with empty `assets/`.
+4. **Graceful fallbacks**: Missing data/assets/audio/save never crashes the game.
+5. **Short play sessions**: Target ~25-30 minutes total. Judges can see the full arc in one sitting.
 
-1. **The fact is the mechanic.** Mars gravity is not a number on a screen — it is how the player
-   jumps, how long the jump takes, how the rescue beacon must be approached. Heat on Mercury is not
-   a stat panel — it is survival. Pressure on Venus is not a warning — it is the haze and the rain.
-   Neptune's wind is not trivia — it pushes the player sideways.
-2. **Learn through play.** The tutorial teaches movement through doing. Hints come from Laika,
-   not from a manual. The player learns the mechanics the same way the pilot learns to fly.
-3. **Safety in failure.** Every lethal state resolves through a fair checkpoint or an in-world
-   readable warning. The player should never feel cheated, only challenged.
-4. **Science stays honest.** Every number the player sees is traceable to a NASA fact sheet. The
-   game never smooths a fact for fun.
+## Level Design
 
-## Levels
+### Level 1: Living on the Outpost
+- **Survival challenges test your decisions**. Laika guides you through three tasks.
+- **Food challenge**: Two-step process. First, safety briefing explains why no open liquids (microgravity spills) and no crumbly food (crumbs damage circuits/vents). Then vending machine: select sealed drink + irradiated chicken. Wrong choice = "FOOD SAFETY PROTOCOL VIOLATED" + restart the game.
+- **Exercise challenge**: Vending machine in code mode. Must enter code 4 for safety harness. Then stationary bicycle: 22-second QTE with alternating left/right key presses. Running freely launches player to ceiling (lose).
+- **Rest challenge**: Laika asks where to sleep. Three options: Control area (CO₂ risk), Exercise area (CO₂ risk), Resting stations (safe). Only resting stations is correct. Correct choice: Laika sleeps, CO₂ is extracted, mission secure.
 
-| # | Level | Real mechanic | Part recovered | Est. time |
-|---|---|---|---|---|
-| 0 | Earth orbit | Top-down tutorial: movement, jump, fire, hint button | — (meet Laika) | 1 min |
-| 1 | Mercury | Sun line sweep; heat waves; shadow hiding | Solar Panel Array | 4 min |
-| 2 | Venus | 92× pressure haze; acid rain; geysers | Hull Plating | 4 min |
-| 3 | Mars | 3.71 m/s² gravity; dust storm visibility | Navigation Module | 4 min |
-| 4 | Jupiter | 2.5 g storm gravity; floating cloud platforms; lightning towers | Shield Generator | 4 min |
-| 5 | Saturn | Ring debris showers between floating moonlets | Fuel Cells | 4 min |
-| 6 | Uranus | 97° axial tilt; low horizon sun; methane haze; sideways rain | Thermal Regulator | 4 min |
-| 7 | Neptune | 2,100 km/h supersonic winds; constant sideways push; meteors | Signal Antenna | 4 min |
-| 8 | Earth | Assembly + stats | Drag all 7 parts onto ship; recap facts; stats screen | — (finale) | 2 min |
+### Level 2: Preparing for the Mission
+- **Equipment selection**: Vending machine, cart mode. Must select exactly 3 essential items from 6 options. Essential: Parachute, Heat Shield, Sky Crane. Distractors: Rubber Duck, Balloon, Disco Ball.
+- **Communication delay test**: 45-second countdown. Player sends instruction to Laika but must NOT press the send button. If they wait without sending, Laika confirms safe landing. Trap: pressing the button again sends another message, delaying communication further. Correct: wait without sending.
 
-Missions unlock strictly in planetary order: win a world and the next padlock opens on the map.
-Jupiter, Saturn, Uranus, and Neptune are full playable worlds, not fact cards.
+### Level 3: Martian Surface
+- **Photography mission**: Take photographs of 6 marked camera buttons. Time limit: 5 minutes. If not completed by 3:30-minute mark, temperature begins to drop (-125°C at 3:30).
+- **Sandstorm**: When sandstorm begins, find shelter behind rocks, stop all scientific activities, and activate Low Power Mode. The dust is so dense that sunlight cannot reach the solar panels.
+- **Extreme cold**: After sandstorm, temperature drops to -125°C. Activate Hibernation Mode (press H key) to protect rover batteries. Hibernation mode has a 45-second timer. If rover not close enough to lava tunnel, it will be destroyed.
 
-## Level Design Details
+### Level 4: Lava Tunnel Exploration
+- **Platforming navigation**: Navigate lava tunnel with flashlight (F key). Not all tunnels are safe. Flashlight reveals path through dark areas.
+- **Obstacles**: Jump between rocks following a straight path. Falling rocks and uneven terrain.
+- **Required objects**: Find and interact with two buttons: rock sample and camera. Both must be activated to escape.
+- **Time limit**: Approximately 4 minutes total. Final 2 minutes: victory sequence showing Laika returning to Earth.
+- **Victory**: Laika returns to spacecraft, reuniting with player. Mission complete.
 
-### Level 0 — Earth orbit (tutorial)
+## Win/Lose Structure
+- **Win**: Laika survives and returns home with mission completed. Player wins the game.
+- **Incomplete**: Laika returns but mission unfinished. Laika says "I won't give up, try again before going back to Earth." Restart the game.
+- **Lost**: Laika doesn't return. Whole mission was a failure.
 
-Top-down, no fail state. Three-task arc:
+## Science Systems
+- **RADLAB + DONKI**: Radiation and real measurements. Mars surface dose ~0.64 mSv/day. Solar particle events watched via feed.
+- **OSDR**: Health and biology. Bone density loss ~1-1.5%/month without loading. Muscle loss without exercise.
+- **MARS TREK**: Real Mars terrain. Survey sites (Gale Crater). Night low -125°C. Fastest winds in solar system (>2,000 km/h on Neptune, referenced for scale).
 
-1. Intro dialogue → objective "Fly to the beacon."
-2. Reach pulsing beacon → objective "Collect the bracket crate below the ship."
-3. Reach crate → objective "Press H to ask Laika for a hint."
-4. Press H → Laika hint → win dialogue → back to map.
+## Art & Audio
+- All procedural/synthesized. No image or audio files required.
+- Game runs with empty `assets/` folder.
+- Portraits: Laika happy.png from assets/images (optional, falls back to hologram).
+- Sounds: All generated in code via sine/square wave recipes.
 
-### Levels 1–7 — the seven worlds
+## Difficulty Levels
+- **Easy**: Longer timers, gentler storms, more retries. 5 hearts, +25% time, frequent hints.
+- **Normal**: The mission as designed on the slides. 3 hearts, standard hazards, standard time.
+- **Hard**: Short timers, harsher cold, stricter comms. 2 hearts, -15% time, hints on request only.
 
-Every planet world is generated from one seeded `data/levels/*.json` config through a shared
-engine, so each world differs only in data: terrain profile, platform layout, hazards
-(spikes, acid pools, ice patches, geysers, lightning towers, falling debris, wind), walkers,
-saucers, checkpoints, and the part pedestal. Each world opens with a mission brief card, plays a
-Laika start line, and ends at the labeled part, then the exit pad. Mars alone adds the recurring
-dust storm that collapses visibility to a circle around the player (and hides enemy blips on the
-minimap while active).
+## Fail Handling
+- **Food wrong**: "FOOD SAFETY PROTOCOL VIOLATED" modal + restart the entire mission from Level 1.
+- **Other task failures**: Retry the specific challenge, not full game restart.
+- **Catastrophic losses** (rover destroyed, fallen into pit): End game with appropriate outcome.
 
-### Level 8 — Earth (finale / assembly)
+## Target Audience
+NASA Space Apps Challenge 2026 judges and players. Kid-facing but with real science content. Suitable for ages 10+.
 
-Requires all seven parts. Parts sit in a cargo tray; player clicks a part, then clicks a socket on
-the ship. Placing a part plays Laika's fact for that planet. With all seven placed, "Launch for
-home" unlocks the stats screen, which now also lists the best time per mission.
-
-## Core Mechanics
-
-- **Movement.** Delta-time based. Top-down controllers use eight-direction jetpack movement with
-  drift and braking. Platformer controllers use gravity from JSON, variable jump height, and coyote
-  time.
-- **Collection.** Parts are per-part flags, not counts. The player collects one of each required
-  part before the finale unlocks.
-- **Hazard readouts.** Meters (heat, pressure) combine color shifts with value readout and position
-  changes so a colorblind player can still read them. Rapid flashing is capped below 1 Hz.
-- **Dialogue.** Laika uses typewriter text, queued lines, triggers, and a manual hint mode (H).
-- **Difficulty.** Easy / Normal / Hard scale enemy and hazard speed, storm timing, hearts, and
-  hint frequency through a single GameState multiplier set — levels never branch on difficulty
-  directly.
-
-## Educational Outcome
-
-By the end of the run the player should have internalized, through play:
-
-- How low gravity changes jump physics.
-- How planetary temperature swings and shadows create stealth windows.
-- How atmosphere and pressure constrain survival.
-- That every gameplay rule maps to a real measurement.
-
-The finale recaps the facts learned and shows run statistics, closing the loop between play and
-learning.
-
-## Art and Audio Direction
-
-Art is fully procedural — planet discs, bands, craters, rings, sun, starfields, nebulae, ships,
-astronauts, aliens, saucers, parts, hearts, and the Laika hologram are all drawn in code. No
-image assets block production.
-
-Audio is synthesized at runtime. No audio files ship with the game. Missing mixer support falls
-back to silence safely.
-
-## Win and Lose Structure
-
-- The full arc is roughly 14 minutes of play.
-- The player must collect all three required parts, then assemble the ship on Earth for the ending.
-- Loss is fair: checkpoint respawn, readable meters, capped flashing, generous hint timing.
+## Core Loop
+1. Boot splash → Menu → Briefing (level intro + Laika dialogue) → Level gameplay → Complete → Briefing (next level) → ... → Level 4 complete → Ending (win/incomplete/lost)

@@ -1,134 +1,127 @@
-# HOMEBOUND — Technical Documentation
+# HOMEBOUND - Technical Document
 
-This document describes the architecture and implementation of HOMEBOUND.
+## Architecture Essentials
 
-## Overview
+- **One `GameState` owns progress** (parts, facts, deaths, difficulty, save/load). Scenes use its public API only; no module-level mutables.
+- **Scene contract**: `handle_events`, `update(dt)`, `draw(screen)`, optional `on_enter`/`on_exit`. Manager: `switch`, `push`, `pop`, `reload`.
+- **Gameplay numbers live in JSON under `data/`** — no hardcoded gameplay numbers in scenes.
 
-- **Language:** Python 3.12
-- **Engine:** pygame-ce >= 2.5.7 (never plain `pygame`)
-- **Resolution:** 1280 × 720, 60 FPS, delta-time based
-- **Style:** Data-driven, one-direction data flow, no module-level mutables
+## Scene Management
 
-## Architecture
+- **SceneManager** handles stack-based transitions: `switch`, `push`, `pop`, `reload`.
+- Every screen is a `Scene` with the same four hooks. The manager never inspects what a scene does, which is why a new level only needs a register call in `main.py`.
+- `Game` container handed to every scene: virtual screen, window, state, manager.
 
-### Scene / SceneManager / Game
+## Core Systems
 
-Every screen is a `Scene` with hooks:
+### GameState (core/game_state.py)
+- Dataclass with: `parts`, `facts`, `deaths`, `difficulty`, `player_name`, `current_level`, `elapsed`, `tutorial_done`, `volume`, `muted`, `text_scale`, `levels_done`, `best_times`
+- Methods: `add_part()`, `has_part()`, `required_parts()`, `all_parts()`, `mark_level_done()`, `is_level_done()`, `best_time()`, `is_unlocked()`, `next_level_id()`, `complete_level()`, `finish_mission()`, `reset_mission()`, `save()`, `load()`, `to_dict()`, `from_dict()`
+- Derived text: `status_line()`, `progress_line()`, `mission_line()`, `science_line()`
+- Difficulty multipliers: easy (0.75 speed, 1.25 time, 5 hearts, 20% hints), normal (1.0), hard (1.25 speed, 0.85 time, 2 hearts, 0% hints)
 
-```python
-class Scene:
-    def handle_events(self, events): ...
-    def update(self, dt): ...
-    def draw(self, screen): ...
-    def on_enter(self, **data): ...
-    def on_exit(self): ...
-```
+### Scene Base Class (core/scene.py)
+- `Scene` class with `name`, `counts_time` flag
+- `SceneManager` with `registry` dict, `stack` list
+- `handle_events`, `update(dt)`, `draw(screen)` hooks
+- `Game` class: `screen`, `window`, `state`, `manager`, `running`
 
-`SceneManager` owns a stack and a name registry:
+### Game Loop (main.py)
+- Async-friendly `main()` function
+- DPI awareness for Windows (ctypes)
+- `SDL_VIDEODRIVER=dummy` and `SDL_AUDIODRIVER=dummy` for headless/smoke test
+- Clock tick at `settings.FPS` (60), `dt = min(clock.tick() / 1000.0, 0.05)`
+- Never `time.sleep()` in the main loop
+- Virtual surface blitting to window with scale handling
 
-- `switch(name, **data)` — replace the current scene.
-- `push(name, **data)` — open an overlay (pause) while the scene below keeps drawing.
-- `pop()` — close the top overlay.
-- `reload()` — switch to the current scene (restart).
-- `update(dt)` — forward delta time to the top scene; overlays update too.
-- `draw()` — forward to every scene in the stack, top first.
+## Data Format
 
-The `Game` container holds the virtual screen surface, the real window, the state, and the manager.
-Scenes use the virtual surface; the manager handles window scaling.
+### Planets (data/planets.json)
+- Order: mercury, venus, mars, jupiter, saturn, uranus, neptune
+- Each planet: `id`, `name`, `part`, `part_color`, `playable`, `map_position`, `orbit_px`, `radius`, `color`, `band_color`, `bands`, `craters`, `ring`, `tagline`, `fact`, `facts`, `unlock`, `source`
+- Seven parts: Solar Panel Array, Hull Plating, Navigation Module, Shield Generator, Fuel Cells, Thermal Regulator, Signal Antenna
 
-### GameState
+### Levels (data/levels/*.json)
+- Keys: `id`, `name`, `style`, `params`, `dialogue`, `objective`, `briefing`, `phases`, `systems`, `part`, `part_color`, `facts`
+- `phases`: list of phase dicts with `id`, `objective`, `dialogue_trigger`, `vending` (config), `time_limit`, `on_correct`, `on_wrong`
+- `dialogue`: indexed by trigger, speaker `Laika`, lines dict
 
-A single shared `GameState` owns all mutable progress:
+### Mission (data/mission.json)
+- `title`, `subtitle`, `levels` array
+- Each level: `id`, `name`, `blurb`, `briefing`, `systems`
+- `level_ids()`: returns ordered list
+- `level_meta(id)`: returns level dict
+- `next_level(id)`: returns next level id
+- `level_number(id)`: returns 1-based number
 
-- `parts`, `facts`, `deaths`, `difficulty`, `current_level`, `elapsed`, `tutorial_done`, `volume`, `muted`.
+### Dialogue (data/dialogue/*.json)
+- `{"speaker": "Laika", "lines": {"trigger": [{"speaker": "Laika", "text": "..."}]}`
+- Lines indexed by trigger: start, intro, food_briefing, food_correct, food_wrong, exercise_intro, vending_code, bike_ready, bike_strap, bike_free, bike, rest_intro, rest_control, rest_exercise, rest_done, complete, etc.
 
-Difficulty is applied through multipliers (speed, time, hearts, hint idle) so no level scene ever
-branches on difficulty itself.
+## Adding a Level
 
-## Data Flow
-
-```
-data/*.json ──► core.levels.load_level() ──► Scene
-                    │
-GameState ◄── read/write parts, facts, deaths, difficulty, elapsed
-                    │
-     ui.HUD / ui.DialogueBox / ui.Meter ──► screen
-```
-
-One direction, no module-level mutables.
-
-## Module Guide
-
-| Module | Responsibility |
-|---|---|
-| `core/settings.py` | Constants, paths, palette, scene names, difficulties. |
-| `core/scene.py` | Scene base, SceneManager, Game container. |
-| `core/game_state.py` | Single state object, multipliers, persistence hooks. |
-| `core/save.py` | Atomic JSON save/load, corrupt-file safe. |
-| `core/levels.py` | JSON loading, validation, planet helpers, playable-level queries. |
-| `core/assets.py` | Font/image loading with graceful fallback. |
-| `core/audio.py` | Synthesized SFX, mute, mixer fallback. |
-| `core/text.py` | Cached text wrapping + drawing. |
-| `core/color.py` | Hex parsing + color math. |
-| `scenes/` | boot, menu, map, tutorial, mars, mercury, venus, ending. |
-| `entities/` | player, pickups, enemies. |
-| `ui/` | hud, dialogue_box, meter, button, pause. |
-| `art/` | sprites, planets, backgrounds. |
-| `data/` | planets, levels, dialogue, APOD cache. |
-| `tools/` | fetch_apod, playtest, smoke_test. |
-
-## Engineering Rules
-
-1. Delta time everywhere — no `time.sleep`, no frame-counted timers.
-2. No blocking calls in the loop; async-friendly `main()` so pygbag stays possible.
-3. All numbers in JSON; no hardcoded gameplay numbers in scenes.
-4. One `GameState`; scenes read/write through its public API only.
-5. Asset paths only through `core.assets.path()`; missing asset = fallback shape, never a crash.
-6. `main` must always launch; merge only at gates; a broken `main` is the only emergency.
-7. 60 FPS target; profile any scene under 45 FPS and note the heavy moment.
+1. Create `data/levels/level<N>.json` with all required keys
+2. Create `scenes/level<N>.py` scene following the pattern:
+   - Subclass `Scene`
+   - `on_enter(**data)`: load cfg, params, dialogue, HUD, dialogue box, set phase
+   - `handle_events(events)`: route to phase handlers
+   - `update(dt)`: phase-specific logic, HUD update, modal/dialogue update
+   - `draw(surface)`: backdrop, astronaut, HUD, dialogue, modal
+   - Phase handlers: `_handle_<phase>()` methods
+   - `_goto_phase(phase)`: transition method
+   - `_schedule_next(phase, delay)`: delayed phase transition
+   - Register in `register_mission_scenes(manager)`
+3. Register scene in `main.py`: `register_mission_scenes(game.manager)`
+4. Add level data to `data/mission.json` under `levels` array
+5. Add planet part in `data/planets.json`
+6. Update documentation
 
 ## Save System
 
-- File: `savegame.json` next to the game, atomically written via temp file + rename.
-- Wrapped in try/except; corrupt or missing saves never block startup.
-- Saved: parts, facts, deaths, difficulty, current level, elapsed, tutorial flag, volume, mute.
+- **One small JSON file** (`savegame.json`) next to the game
+- Everything wrapped in try/except: corrupt/missing save never stops player from starting new mission
+- `VERSION 2` format with `mission_started`, `levels_done`, `facts`, `inventory`, `photos`, `samples`, `deaths`, `difficulty`, `player_name`, `elapsed`, `outcome`, `volume`, `muted`, `text_scale`, `show_hints`, `best_times`
+- Preferences (text_scale, volume, muted) survive reset; campaign progress does not
+- Cross-version: if version changes, preferences survive; old campaign progress does not
 
-## HUD and Dialogue Contracts
+## Audio System (core/audio.py)
+- All sounds synthesized in code — no audio files required
+- 30+ sound recipes: click, hover, dialogue, pickup, part, jump, hit, win, lose, back, laser, boom, camera, alarm, deny, beep, confirm, vacuum, power_down, wind, step, spark, radio, rumble
+- `init()`: initialize mixer once, safe to call repeatedly
+- `play(name, gain)`: play named sound at optional gain
+- `set_volume(value)`, `set_muted(value)`, `is_muted()`
 
-- `HUD` owns hearts, parts inventory, timer, and objective text. Levels never draw hearts.
-- `DialogueBox` owns all Laika text: typewriter, queue, hint mode, advance keys (Space/Enter/
-  click). While active, gameplay updates are frozen except dialogue.
-- `Meter` owns value for heat / pressure / fuel; levels set values through `set`.
+## Input Handling
 
-## Adding a New Level
+- **Keyboard**: `pygame.KEYDOWN` for advance, `pygame.K_SPACE`, `pygame.K_RETURN`, `pygame.K_e`, `pygame.K_h` (hint)
+- **Mouse**: `pygame.MOUSEBUTTONDOWN` for vending machine interaction, button clicks
+- **Mouse scaling**: `game.scale_mouse(event.pos)` translates window coords to 1280x720 virtual canvas
+- Events scaled in main.py before passing to manager
 
-1. Add level JSON under `data/levels/<id>.json`.
-2. Add planet entry under `data/planets.json` with `playable`, `part`, `map_position`, `fact`, `facts`, `unlock`.
-3. Register the scene in `main.py`.
-4. Wire dialogue under `data/dialogue/<id>.json`.
-5. Update HUD objective and unlock rules through `GameState`.
+## Headless/Smoke Test
 
-Bad JSON produces a readable `DataError`, not a traceback mid-frame.
+- `tools/smoke_test.py`: boots every scene and runs frames without a display
+- Sets `SDL_VIDEODRIVER=dummy` and `SDL_AUDIODRIVER=dummy`
+- Runs each scene for 30 frames, checks for errors
+- Tests all 14 scenes + ending
+- Must pass with no crashes
 
-## Build and Run
+## Performance Guidelines
+- Delta time everywhere; no `time.sleep` in main loop
+- Never block the async-friendly `main()`
+- All art/audio procedural — no file I/O during gameplay
+- Graceful fallbacks for missing data/assets/audio/save
+- Keep JSON data files lightweight and well-structured
 
-```bash
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-python main.py
-```
+## Testing
+- Headless smoke test: `python tools/smoke_test.py`
+- All 14 scenes + ending must pass
+- Manual playtest recommended for each level
+- Difficulty toggling should work across all levels
+- Save/load roundtrip should preserve progress
 
-Never install plain `pygame`; install `pygame-ce`.
-
-## Tools
-
-| Tool | Purpose |
-|---|---|
-| `tools/smoke_test.py` | Headless smoke test: registers every scene, runs frames, reports failures. |
-| `tools/playtest.py` | Scripted end-to-end playtest: tutorial → Mars storm/part → Mercury heat/part → Venus fragments/exit → map unlock → ending assemble/stats. |
-| `tools/fetch_apod.py` | One-time NASA APOD fetch + cache to `data/cache/apod.json` / `apod.jpg`. |
-
-Run with `SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy` (the scripts set these themselves).
-
-See [TOOLS.md](TOOLS.md) for usage details.
+## Dependencies
+- `pygame-ce` (never plain `pygame`)
+- Python 3.12 (3.11 also works)
+- No external API keys or network required (all data cached offline)
+- `numpy` not required — all math via `math` module

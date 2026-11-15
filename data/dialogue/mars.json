@@ -8,6 +8,21 @@
     { "trigger": "win", "text": "Module stowed. That is one third of the flight computer - keep it safe." },
     { "trigger": "hint", "text": "Long jumps need speed - run before you leap." },
     { "trigger": "hint", "text": "The storm passes quickly. Find cover or keep moving toward the beacon." },
-    { "trigger": "death_3", "text": "Release jump early for short hops; hold it to clear wide gaps." }
+    { "trigger": "death_3", "text": "Release jump early for short hops; hold it to clear wide gaps." },
+    { "trigger": "intro", "text": "Welcome to the Mars outpost, Astronaut. Laika is your robotic companion. We have survival challenges ahead. Follow me." },
+    { "trigger": "food_briefing", "text": "Before you eat, read the safety card. No open liquids: in microgravity, a spilled drink floats and can reach the panels, vents, and the outpost's most sensitive circuits. Choose sealed drinks you can drink through a straw or valve. No crumbly food: crumbs float into the ventilation grilles and circuit boards. Choose food that is sealed, moist, and eaten in one bite — like irradiated chicken in a pouch." },
+    { "trigger": "food_correct", "text": "Excellent choice, Astronaut. Sealed drink and irradiated chicken are safe for our mission." },
+    { "trigger": "food_wrong", "text": "Warning! This food is not proper for our mission. Open liquids and crumbly food damage the outpost's sensitive circuits and ventilation grilles. Let us try again." },
+    { "trigger": "exercise_intro", "text": "Astronaut, it's time to exercise using the stationary bicycle. In microgravity, the lack of physical activity leads to muscle loss, bone density reduction, and premature aging effects on the body. To use the treadmill safely, you must first request a safety harness from the vending machine." },
+    { "trigger": "vending_code", "text": "The vending machine offers several items. You must enter the code for the item you need. Each object is represented by a number. The safety harness is code 4." },
+    { "trigger": "bike_ready", "text": "The bike is ready. Would you like to strap in and ride, or run freely?" },
+    { "trigger": "bike_strap", "text": "Good choice, Astronaut. Strapping in keeps you safe in microgravity." },
+    { "trigger": "bike_free", "text": "Warning! Running freely in microgravity launches you toward the ceiling. You lose." },
+    { "trigger": "bike", "text": "Pedal the stationary bike. Keep the rhythm: alternating left and right. Do not press the same key twice in a row." },
+    { "trigger": "rest_intro", "text": "Astronaut, where should Laika sleep? In space, there is no vertical or horizontal. Astronauts attach their sleeping bags to the floor or walls. However, they must choose a location near ventilation grilles that remove the CO₂ we produce when breathing." },
+    { "trigger": "rest_control", "text": "Control area selected. Laika receives a CO₂ accumulation warning. This could compromise the mission." },
+    { "trigger": "rest_exercise", "text": "Exercise area selected. Laika receives a CO₂ accumulation warning. This could compromise the mission." },
+    { "trigger": "rest_done", "text": "Laika is sleeping near the ventilation grille. The grilles are extracting the CO₂ from the surrounding air. The mission is secure." },
+    { "trigger": "complete", "text": "All three challenges are complete. You have survived the outpost. Ready for the next level?" }
   ]
 }

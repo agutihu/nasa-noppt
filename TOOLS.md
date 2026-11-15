@@ -1,81 +1,124 @@
-# HOMEBOUND — Tools & Testing Reference
+# HOMEBOUND - Tools Document
 
-Developer and QA utilities shipped with the project.
+## Available Tools
 
-## Overview
+### tools/smoke_test.py
 
-| Tool | File | Purpose |
-|---|---|---|
-| NASA APOD cache | `tools/fetch_apod.py` | Fetch and cache NASA's Astronomy Picture of the Day. |
-| Smoke test | `tools/smoke_test.py` | Headless smoke test: boot every scene, run frames, report failures. |
-| Playtest | `tools/playtest.py` | Scripted end-to-end playtest of the full game loop. |
-| Map panel shots | `tools/shot_map.py` | Render the map detail panel headless for every planet; layout/QA checks. |
+**Purpose**: Headless smoke test — boots every scene and runs frames without a display.
 
-## `tools/fetch_apod.py`
+**Run**: `python tools/smoke_test.py`
 
-Fetches today's NASA Astronomy Picture of the Day from `api.nasa.gov/planetary/apod` and writes:
+**What it does**:
+- Sets `SDL_VIDEODRIVER=dummy` and `SDL_AUDIODRIVER=dummy` for headless operation
+- Initializes pygame and audio
+- Registers all scenes (boot, menu, map, tutorial, all planets, ending, pause, and the new LAIKA mission scenes)
+- Runs each scene for 30 frames, checking for errors
+- Tests the ending scene with all parts unlocked
+- Prints `ok <name>` or `FAIL <name>: <error>` for each scene
+- Final output: `all scenes ok` or lists failed scenes
 
-- `data/cache/apod.json` — title, explanation, media type, date, etc.
-- `data/cache/apod.jpg` — thumbnail image (when the media type is an image).
-
-Run once with internet:
-
-```bash
-python tools/fetch_apod.py
+**Output example**:
+```
+pygame-ce 2.5.7 (SDL 2.32.10, Python 3.14.2)
+ok    tutorial
+ok    mercury
+...
+ok    ending
+all scenes ok
 ```
 
-Optionally pass a NASA API key:
+**Failures indicate**: Import errors, missing data, scene initialization bugs. All 14 scenes + ending must pass.
 
-```bash
-python tools/fetch_apod.py YOUR_API_KEY
+### tools/fetch_apod.py
+
+**Purpose**: Cache NASA Astronomy Picture of the Day.
+
+**Run**: `python tools/fetch_apod.py`
+
+**What it does**:
+- Sets `SDL_VIDEODRIVER=dummy` and `SDL_AUDIODRIVER=dummy`
+- Initializes pygame and audio
+- Fetches today's APOD from NASA API
+- Saves JSON to `data/cache/apod.json` and image to `data/cache/apod.jpg`
+- Prints success/failure message
+- Game reads from cache, so it only needs to run once (or when APOD data changes)
+
+**Output example**:
+```
+APOD cached successfully: "Title: Earth rise over the Moon"
 ```
 
-If the fetch fails, the game keeps running with the bundled offline entry in `data/cache/apod.json`
-(`offline_fallback: true`).
+### tools/fetch_science.py
 
-## `tools/smoke_test.py`
+**Purpose**: Refresh science data from live NASA feeds.
 
-Headless smoke test. Boots pygame with dummy video/audio drivers, registers all scenes in the
-`SceneManager`, runs a fixed number of frames per scene, and reports which scenes boot cleanly.
+**Run**: `python tools/fetch_science.py`
 
-Run from the project root:
+**What it does**:
+- Sets `SDL_VIDEODRIVER=dummy` and `SDL_AUDIODRIVER=dummy`
+- Initializes pygame and audio
+- Fetches latest DONKI space weather events, OSDR health metrics, and MARS TREK data
+- Updates `data/science.json` with new values
+- Updates `data/science.json`'s `updated` field to ISO timestamp
+- Prints number of events fetched and summary
+- Game then uses cached values and never touches the network
 
-```bash
-python tools/smoke_test.py
+**Output example**:
+```
+Fetched 3 DONKI events, 2 OSDR metrics, 1 MARS TREK fact
+Science data refreshed.
 ```
 
-Expected output: one `ok` line per scene, then `all scenes ok`.
+### tools/shot_map.py / tools/shot_world.py
 
-## `tools/playtest.py`
+**Purpose**: Generate reference images for documentation.
 
-Scripted end-to-end playtest. Drives the real game loop headlessly and verifies the full arc:
+**Run**: `python tools/shot_map.py` or `python tools/shot_world.py`
 
-1. Tutorial: intro dialogue finishes, player reaches beacon, collects crate, presses H, level completes.
-2. Mars: dust storm activates, Navigation Module collected.
-3. Mercury: heat rises in sunlight, Solar Panel Array collected.
-4. Venus: fragments collected, escape triggers win, Hull Plating collected.
-5. Map: Earth finale unlocks with all parts.
-6. Ending: assembly accepts parts, launch, stats screen shown.
+**What they do**:
+- `shot_map.py`: Takes a screenshot of the solar system map scene
+- `shot_world.py`: Takes a screenshot of a specific world level
+- Both save PNG files in `tools/shots/` directory
+- Used by TOOLS.md and the documentation system
 
-Run from the project root:
+## Development Workflow
 
-```bash
-python tools/playtest.py
+1. **Make changes** to code, data, or art
+2. **Run smoke test**: `python tools/smoke_test.py` — must pass all 14+1 scenes
+3. **Test manually**: `python main.py` — play through the game
+4. **Refresh data (if needed)**: 
+   - `python tools/fetch_apod.py` — if APOD cache is stale
+   - `python tools/fetch_science.py` — if science data should be updated
+5. **Generate reference shots** (optional): `python tools/shot_map.py`, `python tools/shot_world.py`
+6. **Update documentation** as needed (see DOCS.md keeping-in-sync section)
+
+## Directory Structure (tools/)
+
+```
+tools/
+├── smoke_test.py       (headless scene bootstrap)
+├── fetch_apod.py       (APOD cache)
+├── fetch_science.py    (science data refresh)
+├── shot_map.py         (map screenshot)
+├── shot_world.py       (world level screenshot)
+└── shots/              (generated reference images, gitignored)
 ```
 
-Exits `0` and prints `full loop ok` when all checks pass; exits `1` listing any failures.
+## Troubleshooting
 
-## `tools/shot_map.py`
+**Smoke test fails with import errors**:
+- Ensure all new files are saved before running
+- Check that `register_mission_scenes()` is called in `main.py`
+- Verify all JSON data files are valid and have required keys
 
-Renders the map screen headless — once with nothing selected, then once per planet with the
-detail panel open — and saves PNGs to `tools/shots/` (git-ignored). Use it to verify panel
-layout, text fitting, and status chips after changing the map or planet data.
+**Audio init fails**:
+- Ensure `pygame-ce` is installed, not plain `pygame`
+- Check sound devices aren't exhausted (headless mode uses dummy driver)
 
-```bash
-python tools/shot_map.py
-```
+**APOD fetch fails**:
+- Check internet connectivity (game can run offline with cached data)
+- Verify `data/cache/` directory is writable
 
-## Running Headless
-
-The tools set `SDL_VIDEODRIVER=dummy` and `SDL_AUDIODRIVER=dummy` automatically. No display is
-required.
+**Science data not updating**:
+- Ensure machine has internet access
+- Check that `data/science.json` isn't read-only

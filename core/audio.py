@@ -33,6 +33,19 @@ _RECIPES: dict[str, tuple[float, float, int, float, str]] = {
     "back": (700, 380, 90, 0.25, "sine"),
     "laser": (1400, 320, 120, 0.22, "square"),
     "boom": (160, 40, 320, 0.45, "square"),
+    # mission sounds
+    "camera": (2400, 900, 70, 0.25, "square"),
+    "alarm": (900, 480, 280, 0.28, "square"),
+    "deny": (320, 170, 190, 0.28, "square"),
+    "beep": (1000, 1000, 55, 0.18, "sine"),
+    "confirm": (700, 1320, 150, 0.26, "sine"),
+    "vacuum": (190, 260, 130, 0.16, "square"),
+    "power_down": (760, 150, 460, 0.28, "sine"),
+    "wind": (320, 110, 520, 0.22, "sine"),
+    "step": (210, 140, 45, 0.12, "square"),
+    "spark": (1300, 300, 90, 0.20, "square"),
+    "radio": (620, 880, 110, 0.18, "sine"),
+    "rumble": (90, 55, 420, 0.32, "sine"),
 }
 
 
